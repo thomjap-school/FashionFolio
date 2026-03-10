@@ -6,7 +6,11 @@ DATABASE_URL = getenv("DATABASE_URL")
 
 engine = create_engine(DATABASE_URL)
 
-SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
+SessionLocal = sessionmaker(
+    autocommit=False,
+    autoflush=False,
+    bind=engine
+)
 
 
 class Base(DeclarativeBase):
