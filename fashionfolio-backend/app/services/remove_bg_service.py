@@ -3,6 +3,7 @@
 import os
 import requests
 from dotenv import load_dotenv
+from pathlib import Path
 
 load_dotenv()
 
@@ -10,62 +11,38 @@ REMOVE_BG_API_KEY = os.getenv("REMOVE_BG_API_KEY")
 REMOVE_BG_API_URL = "https://api.remove.bg/v1.0/removebg"
 
 
-async def remove_background(image_url: str) -> str:
-    """
-    Supprime le fond d'une image via remove.bg API.
-
-    Args:
-        image_url: URL de l'image originale
-
-    Returns:
-        URL de l'image avec fond transparent
-
-    Raises:
-        RuntimeError: Si l'API remove.bg échoue
-    """
+async def remove_background(image_path: str) -> bytes:
+    """Supprime le fond d'une image locale via remove.bg API."""
     if not REMOVE_BG_API_KEY:
-        raise RuntimeError(
-            "REMOVE_BG_API_KEY non configurée. "
-            "Ajoute-la à ton .env"
-        )
+        raise RuntimeError("REMOVE_BG_API_KEY non configurée.")
 
     try:
-        response = requests.post(
-            REMOVE_BG_API_URL,
-            files={"image_url": (None, image_url)},
-            headers={"X-API-Key": REMOVE_BG_API_KEY},
-        )
+        with open(image_path, "rb") as f:
+            response = requests.post(
+                REMOVE_BG_API_URL,
+                files={"image_file": f},  # ← fichier binaire, pas une URL
+                headers={"X-Api-Key": REMOVE_BG_API_KEY},
+            )
         response.raise_for_status()
-
-        # Retourner l'image PNG avec fond transparent
-        # Note: En prod, tu voudrais probablement sauvegarder l'image
-        # sur un stockage (S3, etc.) au lieu de la retourner
-        return response.content
+        return response.content  # PNG bytes
 
     except requests.exceptions.RequestException as e:
         raise RuntimeError(f"Erreur remove.bg: {str(e)}")
 
 
-async def process_clothing_image(
-    image_url: str,
-    user_id: int,
-) -> tuple[str, str]:
-    """
-    Traite une image de vêtement: sauvegarde l'original et génère la version sans fond.
+async def process_clothing_image(image_path: str, user_id: int) -> tuple[str, str]:
+    """Sauvegarde l'original et génère la version sans fond."""
+    
+    # URLs pour la DB
+    filename = Path(image_path).name
+    original_url = f"/uploads/clothing/{user_id}/{filename}"
+    no_bg_filename = f"no-bg-{Path(filename).stem}.png"
+    no_bg_url = f"/uploads/clothing/{user_id}/{no_bg_filename}"
 
-    Args:
-        image_url: URL de l'image originale
-        user_id: ID de l'utilisateur
+    # Appel remove.bg + sauvegarde
+    img_bytes = await remove_background(image_path)
+    no_bg_path = Path(image_path).parent / no_bg_filename
+    with open(no_bg_path, "wb") as f:
+        f.write(img_bytes)
 
-    Returns:
-        Tuple (original_url, bg_removed_url)
-    """
-    original_url = image_url
-
-    # TODO: Appeler Remove.bg et sauvegarder le résultat
-    # img_no_bg = await remove_background(image_url)
-    # bg_removed_url = save_image_to_storage(img_no_bg, user_id)
-
-    bg_removed_url = image_url  # Placeholder
-
-    return original_url, bg_removed_url
+    return original_url, no_bg_url

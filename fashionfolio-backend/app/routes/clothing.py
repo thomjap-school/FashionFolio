@@ -1,5 +1,8 @@
 """app/routes/clothing.py - Endpoints pour gérer le dressing."""
 
+import uuid
+from pathlib import Path
+
 from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Form
 from sqlalchemy.orm import Session
 
@@ -11,9 +14,13 @@ from app.schemas.clothing import (
     ClothingResponse,
     ClothingUpdate,
 )
+from app.services.remove_bg_service import process_clothing_image
 
 
 router = APIRouter(prefix="/clothing", tags=["clothing"])
+
+# Dossier racine où les uploads sont servis statiquement
+UPLOAD_ROOT = Path("uploads/clothing")
 
 
 @router.post("/", response_model=ClothingResponse)
@@ -34,7 +41,7 @@ async def create_clothing(
         price=clothing.price,
         description=clothing.description,
         image_url=clothing.image_url,
-        image_bg_removed_url=clothing.image_url,  # TODO: Process with remove.bg
+        image_bg_removed_url=clothing.image_url,
     )
     db.add(new_clothing)
     db.commit()
@@ -60,15 +67,30 @@ async def upload_clothing_with_image(
     Télécharge une photo de vêtement, la sauvegarde,
     traite avec remove.bg (extraction du fond), et crée l'article.
     """
-    # TODO: Sauvegarder le fichier uploadé
-    # TODO: Appeler remove_bg_service pour traiter l'image
-    # TODO: Générer les URLs des images stockées
+    # --- 1. Préparer les chemins ---
+    user_upload_dir = UPLOAD_ROOT / str(user_id)
+    user_upload_dir.mkdir(parents=True, exist_ok=True)
 
-    # Placeholder: utiliser l'URL directe du fichier
-    image_url = f"/uploads/clothing/{user_id}/{file.filename}"
-    image_bg_removed_url = f"/uploads/clothing/{user_id}/no-bg-{file.filename}"
+    unique_prefix = uuid.uuid4().hex[:8]
+    original_filename = f"{unique_prefix}_{file.filename}"
+    original_path = user_upload_dir / original_filename
 
-    clothing = ClothingCreate(
+    # --- 2. Sauvegarder l'image originale ---
+    content = await file.read()
+    with open(original_path, "wb") as f:
+        f.write(content)
+
+    # --- 3. Appeler remove.bg + construire les URLs ---
+    try:
+        image_url, image_bg_removed_url = await process_clothing_image(str(original_path), user_id)
+    except Exception as e:
+        print(f"[remove.bg] Erreur : {e}")
+        image_url = f"/uploads/clothing/{user_id}/{original_filename}"
+        image_bg_removed_url = image_url  # fallback sur l'original
+
+    # --- 4. Créer l'entrée en base ---
+    new_clothing = Clothing(
+        user_id=user_id,
         name=name,
         type=type,
         color=color,
@@ -77,19 +99,6 @@ async def upload_clothing_with_image(
         brand=brand,
         price=price,
         description=description,
-        image_url=image_url,
-    )
-
-    new_clothing = Clothing(
-        user_id=user_id,
-        name=clothing.name,
-        type=clothing.type,
-        color=clothing.color,
-        style=clothing.style,
-        pattern=clothing.pattern,
-        brand=clothing.brand,
-        price=clothing.price,
-        description=clothing.description,
         image_url=image_url,
         image_bg_removed_url=image_bg_removed_url,
     )
