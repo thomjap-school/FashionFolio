@@ -82,7 +82,9 @@ async def upload_clothing_with_image(
 
     # --- 3. Appeler remove.bg + construire les URLs ---
     try:
-        image_url, image_bg_removed_url = await process_clothing_image(str(original_path), user_id)
+        image_url, image_bg_removed_url = await (
+            process_clothing_image(str(original_path), user_id)
+        )
     except Exception as e:
         print(f"[remove.bg] Erreur : {e}")
         image_url = f"/uploads/clothing/{user_id}/{original_filename}"

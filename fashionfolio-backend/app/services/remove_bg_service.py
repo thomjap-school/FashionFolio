@@ -30,10 +30,12 @@ async def remove_background(image_path: str) -> bytes:
         raise RuntimeError(f"Erreur remove.bg: {str(e)}")
 
 
-async def process_clothing_image(image_path: str, user_id: int) -> tuple[str, str]:
+async def process_clothing_image(
+    image_path: str,
+    user_id: int
+) -> tuple[str, str]:
     """Sauvegarde l'original et génère la version sans fond."""
-    
-    # URLs pour la DB
+# URLs pour la DB
     filename = Path(image_path).name
     original_url = f"/uploads/clothing/{user_id}/{filename}"
     no_bg_filename = f"no-bg-{Path(filename).stem}.png"
