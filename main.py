@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.security import HTTPBearer
 from app.core.database import Base, engine
 import app.models.user
 import app.models.social
@@ -12,7 +13,12 @@ from app.routes.chat import router as chat_router
 
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI()
+app = FastAPI(
+    title="FashionFolio API",
+    version="0.1.0",
+)
+
+security = HTTPBearer()
 
 app.include_router(auth_router)
 app.include_router(users_router)
