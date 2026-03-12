@@ -1,14 +1,14 @@
-from google import genai
-import os
 import json
+import os
 from dotenv import load_dotenv
+from google import genai
 
 load_dotenv()
 
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 def build_prompt(wardrobe: list, history: list, user_message: str) -> str:
-    
+    """Construire le prompt pour le LLM avec le dressing et l'historique."""
     wardrobe_text = json.dumps(wardrobe, ensure_ascii=False, indent=2)
     history_text = json.dumps(history, ensure_ascii=False) if history else "Aucune tenue suggérée pour le moment."
 
@@ -40,8 +40,13 @@ FORMAT DE RÉPONSE JSON OBLIGATOIRE :
 Demande utilisateur : {user_message}
 """
 
-def generate_outfit(wardrobe: list, history: list, user_message: str):
-    
+async def generate_outfit(
+    user_message: str,
+    wardrobe: list,
+    session_id: str,
+) -> dict:
+    """Générer une tenue avec le LLM Gemini."""
+    history = []  # TODO: récupérer l'historique de la session
     prompt = build_prompt(wardrobe, history, user_message)
     
     response = client.models.generate_content(
@@ -51,6 +56,10 @@ def generate_outfit(wardrobe: list, history: list, user_message: str):
 
     raw = response.text.strip()
     raw = raw.replace("```json", "").replace("```", "").strip()
-    
     outfit = json.loads(raw)
-    return outfit
+    
+    return {
+        "message": f"Voici une tenue parfaite pour vous: {outfit.get('description', '')}",
+        "outfit": outfit,
+        "occasion": "casual",
+    }

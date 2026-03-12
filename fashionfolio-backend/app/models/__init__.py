@@ -1,8 +1,5 @@
-# app/models/__init__.py
+"""Modèles SQLAlchemy pour la base de données."""
 
 from .clothing import Clothing
 
-# Si tu ajoutes d'autres modèles plus tard,
-# tu pourras les importer ici aussi, par exemple :
-# from .user import User
-# from .outfit_history import OutfitHistory
+__all__ = ["Clothing"]

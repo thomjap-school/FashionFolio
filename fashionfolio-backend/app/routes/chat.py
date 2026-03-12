@@ -1,41 +1,21 @@
+"""app/routes/chat.py - Endpoint POST /chat pour la génération de tenues."""
+
 import uuid
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+from app.auth import get_current_user_id
 from app.database import get_db
 from app.models.clothing import Clothing
-from app.auth import get_current_user_id
-from app.services.llm_service import generate_outfit, clear_history
-
-
-"""
-app/routes/chat.py
-
-Endpoint POST /chat
-"""
+from app.schemas.chat import ChatRequest, ChatResponse
+from app.services.llm_service import generate_outfit
 
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
 
-# ─── Schémas ─────────────────────────────────────
-
-class ChatRequest(BaseModel):
-    message: str
-    session_id: str | None = None  # None = nouvelle session
-
-
-class ChatResponse(BaseModel):
-    session_id: str
-    message: str
-    outfit: dict
-    occasion: str
-
-
-# ─── Helper ───────────────────────────────────────
-
 def _format_wardrobe(items: list[Clothing]) -> list[dict]:
+    """Formater les articles du dressing pour le LLM."""
     return [
         {
             "id":      item.id,
@@ -49,8 +29,6 @@ def _format_wardrobe(items: list[Clothing]) -> list[dict]:
         for item in items
     ]
 
-
-# ─── Routes ─────────────────────────────────────
 
 @router.post("/", response_model=ChatResponse)
 async def chat(
