@@ -106,7 +106,11 @@ async def get_wardrobe(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    items = db.query(Clothing).filter(Clothing.user_id == current_user.id).all()
+    items = (
+        db.query(Clothing)
+        .filter(Clothing.user_id == current_user.id)
+        .all()
+    )
     return items
 
 

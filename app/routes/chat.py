@@ -45,7 +45,8 @@ async def chat(
     if not wardrobe_items:
         raise HTTPException(
             status_code=400,
-            detail="Ton dressing est vide. Ajoute des vêtements avant de générer une tenue.",
+            detail="Ton dressing est vide. "
+            "Ajoute des vêtements avant de générer une tenue.",
         )
 
     wardrobe = _format_wardrobe(wardrobe_items)

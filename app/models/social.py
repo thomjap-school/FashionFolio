@@ -4,9 +4,11 @@ from sqlalchemy.sql import func
 from app.core.database import Base
 import enum
 
+
 class FriendshipStatus(enum.Enum):
     pending = "pending"
     accepted = "accepted"
+
 
 class Friendship(Base):
     __tablename__ = "friendships"
@@ -17,6 +19,7 @@ class Friendship(Base):
     status = Column(Enum(FriendshipStatus), default=FriendshipStatus.pending)
     created_at = Column(DateTime, server_default=func.now())
 
+
 class OutfitPost(Base):
     __tablename__ = "outfit_posts"
 
@@ -25,6 +28,7 @@ class OutfitPost(Base):
     outfit_data = Column(String)  # JSON stringify de la tenue
     caption = Column(String, nullable=True)
     created_at = Column(DateTime, server_default=func.now())
+
 
 class Message(Base):
     __tablename__ = "messages"

@@ -26,6 +26,7 @@ app.include_router(social_router)
 app.include_router(clothing_router)
 app.include_router(chat_router)
 
+
 @app.get("/")
 def root():
     return {"message": "FashionFolio API is running 🚀"}

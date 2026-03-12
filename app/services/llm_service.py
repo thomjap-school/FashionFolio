@@ -10,6 +10,7 @@ client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 # Stockage en mémoire des historiques de session
 _session_history: dict = {}
 
+
 def clear_history(session_id: str):
     """Réinitialise l'historique d'une session."""
     _session_history.pop(session_id, None)
