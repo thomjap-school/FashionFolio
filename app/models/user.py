@@ -11,5 +11,5 @@ class User(Base):
     password_hash = Column(String)
     profile_picture = Column(String, nullable=True)
     created_at = Column(DateTime, server_default=func.now())
-    # clothings = relationship("Clothing", back_populates="user")
+    clothings = relationship("Clothing", back_populates="user")
     # outfits = relationship("Outfit", back_populates="user")
