@@ -1,7 +1,7 @@
 # Groupe de massal_j 1071814
 # FashionFolio — Backend
 
-Petit backend Flask pour le projet FashionFolio (gestion de vêtements, tenues et chat/assistant).
+Petit backend avec FastApi pour le projet FashionFolio (gestion de vêtements, tenues et chat/assistant).
 
 **Principales fonctionnalités**
 - Gestion des utilisateurs, vêtements et tenues
