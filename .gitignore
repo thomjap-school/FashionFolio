@@ -7,3 +7,5 @@ venv/
 *.db
 .DS_Store
 venv/
+fashionfolio-backend/app/.env
+fashionfolio-backend/uploads/clothing_images/*
