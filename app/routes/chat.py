@@ -1,0 +1,75 @@
+"""app/routes/chat.py - Endpoint POST /chat pour la génération de tenues."""
+
+import uuid
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+
+from app.dependencies.auth import get_current_user
+from app.core.database import get_db
+from app.models.clothing import Clothing
+from app.models.user import User
+from app.schemas.chat import ChatRequest, ChatResponse
+from app.services.llm_service import generate_outfit, clear_history
+
+
+router = APIRouter(prefix="/chat", tags=["chat"])
+
+
+def _format_wardrobe(items: list[Clothing]) -> list[dict]:
+    return [
+        {
+            "id":      item.id,
+            "name":    item.name,
+            "type":    item.type,
+            "color":   item.color,
+            "style":   item.style,
+            "pattern": item.pattern,
+            "brand":   item.brand,
+        }
+        for item in items
+    ]
+
+
+@router.post("/", response_model=ChatResponse)
+async def chat(
+    body: ChatRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    session_id = body.session_id or str(uuid.uuid4())
+
+    wardrobe_items = (
+        db.query(Clothing).filter(Clothing.user_id == current_user.id).all()
+    )
+
+    if not wardrobe_items:
+        raise HTTPException(
+            status_code=400,
+            detail="Ton dressing est vide. Ajoute des vêtements avant de générer une tenue.",
+        )
+
+    wardrobe = _format_wardrobe(wardrobe_items)
+
+    try:
+        result = await generate_outfit(
+            user_message=body.message,
+            wardrobe=wardrobe,
+            session_id=session_id,
+        )
+    except RuntimeError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+
+    return ChatResponse(
+        session_id=session_id,
+        message=result.get("message", ""),
+        outfit=result.get("outfit", {}),
+        occasion=result.get("occasion", "autre"),
+    )
+
+
+@router.delete("/{session_id}", status_code=204)
+def reset_session(
+    session_id: str,
+    current_user: User = Depends(get_current_user),
+):
+    clear_history(session_id)
