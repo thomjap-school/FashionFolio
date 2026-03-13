@@ -506,9 +506,39 @@ docker compose down -v
 ```
 
 **Project structure (essentials)**
-- `app/` : FastAPI application
-- `app/models/` : models (user, clothing)
-- `app/routes/` : API routes (chat.py, clothing.py, social, ...)
-- `app/schemas/` : schemas / serializers
-- `app/services/` : external integrations (LLM, background removal)
-- `uploads/clothing/` : user image storage
+
+```
+fashionfolio/
+├── app/
+│   ├── core/
+│   │   ├── database.py          # PostgreSQL connection + session
+│   │   └── security.py          # Password hashing + JWT creation
+│   ├── dependencies/
+│   │   └── auth.py              # JWT middleware (get_current_user)
+│   ├── models/
+│   │   ├── user.py              # Users table
+│   │   ├── clothing.py          # Clothing table
+│   │   ├── outfit.py            # Outfits table
+│   │   └── social.py            # Friendship, posts, messages tables
+│   ├── routes/
+│   │   ├── auth.py              # POST /auth/register, /auth/login
+│   │   ├── users.py             # GET /users/me
+│   │   ├── clothing.py          # CRUD /clothing + image upload
+│   │   ├── chat.py              # POST /chat + DELETE /chat/{session_id}
+│   │   └── social.py            # Friends, posts, feed, messages
+│   ├── schemas/
+│   │   ├── user.py              # UserCreate, UserLogin
+│   │   ├── clothing.py          # ClothingCreate, ClothingResponse
+│   │   ├── chat.py              # ChatRequest, ChatResponse
+│   │   └── social.py            # Friendship, OutfitPost, Message schemas
+│   └── services/
+│       ├── llm_service.py       # Gemini integration + session memory
+│       └── remove_bg_service.py # Background removal via remove.bg
+├── uploads/                     # User uploaded images
+├── main.py                      # FastAPI entry point
+├── requirements.txt             # Python dependencies
+├── Dockerfile                   # Docker image
+├── docker-compose.yml           # API + PostgreSQL services
+├── .env                         # Environment variables (git ignored)
+└── .env.example                 # Environment variables template
+```
