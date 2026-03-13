@@ -505,7 +505,7 @@ Delete the **volumes** created by Docker Compose:
 docker compose down -v
 ```
 
-**Project structure (essentials)**
+## **Project structure (essentials)**
 
 ```
 fashionfolio/
