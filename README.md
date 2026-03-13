@@ -1,81 +1,427 @@
-# Groupe de massal_j 1071814
+# Group massal_j 1071814
 # FashionFolio — Backend
 
-Petit backend avec FastApi pour le projet FashionFolio (gestion de vêtements, tenues et chat/assistant).
+Small backend built with FastAPI for the FashionFolio project (clothing management, outfits and chat/assistant).
 
-**Principales fonctionnalités**
-- Gestion des utilisateurs, vêtements et tenues
-- API REST pour CRUD vêtements / tenues
-- Intégration d'un service LLM pour chat (app/services/llm_service.py)
-- Service de suppression d'arrière-plan d'image (app/services/remove_bg_service.py)
-- Stockage des images dans `uploads/`
+**Main features**
+- User, clothing and outfit management
+- REST API for clothing / outfit CRUD
+- LLM service integration for chat (app/services/llm_service.py)
+- Image background removal service (app/services/remove_bg_service.py)
+- Image storage in `uploads/clothing`
 
-**Prérequis**
-- Python 3.10+ (ou 3.9 suivant l'environnement)
-- Voir les dépendances : [fashionfolio-backend/requirements.txt](fashionfolio-backend/requirements.txt)
+**Prerequisites**
+- Python 3.10+ (or 3.9 depending on the environment)
+- See dependencies: [requirements.txt](requirements.txt)
 
-**Installation rapide**
-1. Créez un environnement virtuel et activez-le :
+**Quick setup**
+1. Create a virtual environment and activate it:
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
 ```
-2. Installez les dépendances :
+
+2. Copy the environment file and fill in the variables:
+
+```bash
+cp .env.example .env
+```
+
+```env
+POSTGRES_USER="DB_user"
+POSTGRES_PASSWORD="DB_password"
+POSTGRES_DB="DB_name"
+DATABASE_URL="postgresql://fashionfolio:fashionfolio@db:5432/fashionfolio"
+
+GEMINI_API_KEY="your_gemini_api_key"
+GEMINI_MODEL="your_gemini_model"
+REMOVE_BG_API_KEY="your_removebg_api_key"
+```
+
+3. Install dependencies:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-**Configuration**
-- Variables d'environnement utiles : `FLASK_APP`, `FLASK_ENV`, `DATABASE_URL` (selon `app/database.py`).
-- Exemple (macOS/Linux) :
+**Starting the application**
 
+From the repository root folder:
+
+Build:
 ```bash
-export FLASK_APP=app.main
-export FLASK_ENV=development
+docker compose up --build
 ```
-
-**Démarrer l'application**
-1. Lancer Flask (depuis le dossier `fashionfolio-backend`) :
-
+Or just run:
 ```bash
-cd fashionfolio-backend
-flask run
+docker compose up
 ```
-
-2. Endpoints principaux : voir `fashionfolio-backend/app/routes/` pour la liste des routes (chat, clothing, ...).
-
-**Initialiser les données**
-- Un script de seed est fourni :
-
-```bash
-python seed.py
-```
-or
-```bash
-uvicorn app.main:app --reload
-```
-**Structure du projet (essentiel)**
-- `app/` : application Flask
-- `app/models/` : modèles (user, clothing, outfit)
-- `app/routes/` : routes API (chat.py, clothing.py, ...)
-- `app/schemas/` : schémas/serializers
-- `app/services/` : intégrations externes (LLM, suppression BG)
-- `uploads/` : stockage des images utilisateur
-
-**Tests & qualité**
-- Aucun framework de test inclus par défaut. Ajouter `pytest` si nécessaire et écrire des tests dans un dossier `tests/`.
-
-**Contribution**
-- Forkez, créez une branche feature, ouvrez une MR. Respectez PEP8 et ajoutez des tests pour les fonctionnalités critiques.
-
-**Licence**
-- Indiquer la licence souhaitée (MIT/Apache/etc.). Par défaut, pas de licence précisée.
-
-**Contact / Aide**
-- Pour toute question, ouvrir une issue dans ce dépôt ou contacter l'équipe projet.
 
 ---
 
-Fichier mis à jour : [tr/README.md](tr/README.md)
+# 📚 API Documentation — FashionFolio
+
+Base URL: `http://localhost:8000`
+
+All protected routes require the following header:
+```
+Authorization: Bearer <access_token>
+```
+
+---
+
+## 🔐 Auth — `/auth`
+
+### `POST /auth/register` — Register
+Creates a user account and returns a JWT token.
+
+**Body (JSON):**
+```json
+{
+  "email": "alice@example.com",
+  "username": "alice",
+  "password": "mypassword123"
+}
+```
+
+**Response:**
+```json
+{
+  "access_token": "eyJhbGci..."
+}
+```
+
+---
+
+### `POST /auth/login` — Login
+Authenticates a user and returns a JWT token.
+
+**Body (JSON):**
+```json
+{
+  "email": "alice@example.com",
+  "password": "mypassword123"
+}
+```
+
+**Response:**
+```json
+{
+  "access_token": "eyJhbGci..."
+}
+```
+
+---
+
+## 👤 Users — `/users`
+
+### `GET /users/me` — Current user profile
+Returns the information of the currently authenticated user.
+
+> 🔒 Protected
+
+**Response:**
+```json
+{
+  "id": 1,
+  "email": "alice@example.com",
+  "username": "alice"
+}
+```
+
+---
+
+## 👗 Clothing — `/clothing`
+
+> 🔒 All routes are protected
+
+### `POST /clothing/` — Add a clothing item (without image)
+Creates an item with an already hosted image URL.
+
+**Body (JSON):**
+```json
+{
+  "name": "White shirt",
+  "type": "top",
+  "color": "white",
+  "style": "casual",
+  "pattern": "plain",
+  "brand": "Uniqlo",
+  "price": 29.99,
+  "description": "Light summer shirt",
+  "image_url": "https://example.com/image.jpg"
+}
+```
+
+**Response:** `ClothingResponse` object (see bottom of section)
+
+---
+
+### `POST /clothing/upload` — Add a clothing item with image
+Upload an image file + metadata via `multipart/form-data`. Background removal is applied automatically.
+
+**Form fields:**
+| Field | Type | Required |
+|-------|------|----------|
+| `file` | image file | ✅ |
+| `name` | string | ✅ |
+| `type` | string | ✅ |
+| `color` | string | ✅ |
+| `style` | string | ❌ |
+| `pattern` | string | ❌ |
+| `brand` | string | ❌ |
+| `price` | float | ❌ |
+| `description` | string | ❌ |
+
+**curl example:**
+```bash
+curl -X POST http://localhost:8000/clothing/upload \
+  -H "Authorization: Bearer <token>" \
+  -F "file=@shirt.jpg" \
+  -F "name=Blue shirt" \
+  -F "type=top" \
+  -F "color=blue"
+```
+
+---
+
+### `GET /clothing/` — Wardrobe list
+Returns all items belonging to the authenticated user.
+
+**Response:** `list[ClothingResponse]`
+
+---
+
+### `GET /clothing/{clothing_id}` — Item detail
+
+**URL parameter:** `clothing_id` (int)
+
+**Response:** `ClothingResponse`
+
+---
+
+### `PUT /clothing/{clothing_id}` — Update an item
+
+**Body (JSON, all fields are optional):**
+```json
+{
+  "name": "New name",
+  "color": "red",
+  "price": 49.99
+}
+```
+
+---
+
+### `DELETE /clothing/{clothing_id}` — Delete an item
+
+**Response:** `204 No Content`
+
+---
+
+### `ClothingResponse` model
+```json
+{
+  "id": 1,
+  "user_id": 1,
+  "name": "White shirt",
+  "type": "top",
+  "color": "white",
+  "style": "casual",
+  "pattern": "plain",
+  "brand": "Uniqlo",
+  "price": 29.99,
+  "description": "Light summer shirt",
+  "image_url": "/uploads/clothing/1/abc123_shirt.jpg",
+  "image_bg_removed_url": "/uploads/clothing/1/abc123_shirt_nobg.png"
+}
+```
+
+---
+
+## 💬 Chat — `/chat`
+
+> 🔒 Protected
+
+### `POST /chat/` — Generate an outfit via AI
+Sends a message to the LLM which suggests an outfit based on the user's wardrobe.
+
+**Body (JSON):**
+```json
+{
+  "message": "I want a casual outfit to go to the cinema",
+  "session_id": "abc-123"
+}
+```
+> `session_id` is optional. If not provided, a new UUID is generated.
+
+**Response:**
+```json
+{
+  "session_id": "abc-123",
+  "message": "Here's a casual look I'd suggest...",
+  "outfit": {
+    "top": { "id": 3, "name": "Grey t-shirt" },
+    "bottom": { "id": 7, "name": "Blue slim jeans" }
+  },
+  "occasion": "casual"
+}
+```
+
+---
+
+### `DELETE /chat/{session_id}` — Reset a chat session
+
+**URL parameter:** `session_id` (string)
+
+**Response:** `204 No Content`
+
+---
+
+## 👥 Social — `/social`
+
+> 🔒 All routes are protected
+
+### `POST /social/friends/request/{friend_id}` — Send a friend request
+
+**URL parameter:** `friend_id` (int)
+
+**Response:**
+```json
+{
+  "id": 1,
+  "user_id": 1,
+  "friend_id": 2,
+  "status": "pending"
+}
+```
+
+---
+
+### `POST /social/friends/accept/{friend_id}` — Accept a friend request
+
+**URL parameter:** `friend_id` (int — the user who sent the request)
+
+**Response:** friendship object with `status: "accepted"`
+
+---
+
+### `GET /social/friends` — Friends list
+Returns the accepted friendships of the authenticated user.
+
+**Response:** `list[FriendRequestResponse]`
+
+---
+
+### `POST /social/posts` — Share an outfit
+
+**Body (JSON):**
+```json
+{
+  "outfit_id": 5,
+  "caption": "Outfit of the day 🔥"
+}
+```
+
+**Response:** `OutfitPostResponse`
+
+---
+
+### `GET /social/feed` — News feed
+Returns posts from accepted friends, sorted by descending date.
+
+**Response:** `list[OutfitPostResponse]`
+
+---
+
+### `DELETE /social/posts/{post_id}` — Delete a post
+
+**Response:**
+```json
+{
+  "message": "Post deleted"
+}
+```
+
+---
+
+### `POST /social/messages/{receiver_id}` — Send a message
+
+**URL parameter:** `receiver_id` (int)
+
+**Body (JSON):**
+```json
+{
+  "content": "Hey, I love your outfit!"
+}
+```
+
+**Response:** `MessageResponse`
+
+---
+
+### `GET /social/messages/{receiver_id}` — Conversation with a user
+Returns all messages exchanged between the authenticated user and `receiver_id`, sorted by ascending date.
+
+**Response:** `list[MessageResponse]`
+
+---
+
+## 🧪 Quick testing with curl
+
+```bash
+# 1. Register
+curl -X POST http://localhost:8000/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@test.com","username":"test","password":"test123"}'
+
+# 2. Login and retrieve the token
+TOKEN=$(curl -s -X POST http://localhost:8000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@test.com","password":"test123"}' | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
+
+# 3. View your profile
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8000/users/me
+
+# 4. View your wardrobe
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8000/clothing/
+
+# 5. Chat with the AI
+curl -X POST http://localhost:8000/chat/ \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"message":"Suggest an outfit for work"}'
+```
+
+---
+
+## ⚠️ Common error codes
+
+| Code | Meaning |
+|------|---------|
+| `400` | Invalid data (email already used, empty wardrobe, etc.) |
+| `401` | Missing or invalid token |
+| `404` | Resource not found |
+| `503` | LLM service unavailable |
+
+---
+
+> 💡 Interactive documentation available at `http://localhost:8000/docs` (Swagger UI)
+
+---
+
+**Reset data**
+
+Delete the **volumes** created by Docker Compose:
+```bash
+docker compose down -v
+```
+
+**Project structure (essentials)**
+- `app/` : FastAPI application
+- `app/models/` : models (user, clothing)
+- `app/routes/` : API routes (chat.py, clothing.py, social, ...)
+- `app/schemas/` : schemas / serializers
+- `app/services/` : external integrations (LLM, background removal)
+- `uploads/clothing/` : user image storage
