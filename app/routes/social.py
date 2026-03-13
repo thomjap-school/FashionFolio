@@ -24,7 +24,6 @@ router = APIRouter(prefix="/social", tags=["social"])
     "/friends/request/{friend_id}",
     response_model=FriendRequestResponse,
     summary="Envoie une demande d'ami",
-    tags=["Friends"]
 )
 def send_friend_request(
     friend_id: int,
