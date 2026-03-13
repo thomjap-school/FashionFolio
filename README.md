@@ -60,6 +60,93 @@ docker compose up
 
 ---
 
+## 🗄️ Database
+
+The database uses **PostgreSQL** (via Docker). SQLAlchemy automatically translates Python classes into SQL tables at application startup.
+
+### User model
+| Field | Description |
+|-------|-------------|
+| `id` | Primary key |
+| `email` | Unique email address |
+| `password_hash` | Bcrypt-hashed password |
+| `username` | Display name |
+| `bio` | User biography |
+| `photo_url` | Profile picture URL |
+| `created_at` | Account creation date |
+
+> Relations: one User owns multiple `Clothing` items and multiple `Outfit` records.
+
+### Clothing model
+| Field | Description |
+|-------|-------------|
+| `id` | Primary key |
+| `user_id` | Foreign key → User |
+| `type` | Item type (top, bottom, shoes...) |
+| `color` | Color |
+| `style` | Style (casual, formal...) |
+| `pattern` | Pattern (plain, striped...) |
+| `brand` | Brand name |
+| `price` | Price |
+| `image_url` | Original image URL |
+| `image_bg_removed_url` | Background-removed image URL |
+
+> These attributes are used by the LLM to compose coherent outfits.
+
+### Outfit model
+| Field | Description |
+|-------|-------------|
+| `id` | Primary key |
+| `user_id` | Foreign key → User |
+| `items` | Full outfit stored as JSON |
+| `session_id` | Chat session identifier |
+| `validated` | Boolean — user approved the outfit |
+| `created_at` | Generation date |
+
+> The `items` field stores the complete outfit as JSON: `{ top, bottom, shoes, accessory }`.
+
+---
+
+## 🤖 LLM Integration — Gemini
+
+### Configuration
+The API key is stored in the `.env` file and loaded via `python-dotenv`:
+```env
+GEMINI_API_KEY="your_gemini_api_key"
+GEMINI_MODEL="your_gemini_model"
+```
+
+### Outfit generation flow
+1. Receive the user message and fetch their wardrobe from the database
+2. Build the prompt with the wardrobe and session history
+3. Call the Gemini API with strict rules (system prompt)
+4. Parse the JSON response returned by Gemini
+5. Return the structured outfit to the `/chat` endpoint
+
+### System prompt rules
+The system prompt defines strict LLM behavior:
+- Generate outfits **only** from items in the user's wardrobe
+- **Always** respond in JSON (`top`, `bottom`, `shoes`, `accessory`, `description`)
+- Never answer questions outside the fashion domain
+- Never invent clothing items that don't exist in the wardrobe
+- Avoid repeating outfits already suggested in the current session
+
+### Expected JSON response format
+```json
+{
+  "top":       { "id": 1, "name": "White t-shirt", "brand": "Zara" },
+  "bottom":    { "id": 2, "name": "Blue jeans",    "brand": "Levi's" },
+  "shoes":     { "id": 3, "name": "White sneakers", "brand": "Nike" },
+  "accessory": null,
+  "description": "Perfect casual outfit for the day"
+}
+```
+
+### Session memory management
+The LLM has no native memory. The history of already-suggested outfits is injected into each prompt to avoid repetitions. Session history is cleared via `DELETE /chat/{session_id}`.
+
+---
+
 # 📚 API Documentation — FashionFolio
 
 Base URL: `http://localhost:8000`
