@@ -5,6 +5,7 @@ import httpx
 
 WEATHER_API_KEY = os.getenv("WEATHER_API_KEY")
 
+
 async def get_weather(city: str = "Paris") -> dict:
     """Récupère la météo actuelle pour une ville."""
     url = f"https://api.openweathermap.org/data/2.5/weather"

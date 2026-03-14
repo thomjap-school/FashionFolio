@@ -18,7 +18,11 @@ def clear_history(session_id: str):
     _session_history.pop(session_id, None)
 
 
-def build_prompt(wardrobe: list, history: list, user_message: str, weather: dict = None) -> str:
+def build_prompt(wardrobe: list,
+                 history: list,
+                 user_message: str,
+                 weather: dict = None
+                 ) -> str:
     """Construire le prompt pour le LLM avec le dressing et l'historique."""
     wardrobe_text = json.dumps(wardrobe, ensure_ascii=False, indent=2)
     history_text = (
@@ -27,9 +31,9 @@ def build_prompt(wardrobe: list, history: list, user_message: str, weather: dict
         else "Aucune tenue suggérée pour le moment."
     )
     weather_text = (
-        f"Météo actuelle à {weather['city']} : {weather['temperature']}°C, {weather['description']}."
-        if weather
-        else "Météo inconnue."
+        f"Météo actuelle à {weather['city']} : "
+        f"{weather['temperature']}°C, {weather['description']}."
+        if weather else "Météo inconnue."
     )
 
     return f"""

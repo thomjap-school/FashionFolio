@@ -36,26 +36,33 @@ def send_friend_request(
     current_user: User = Depends(get_current_user)
 ) -> Any:
     if friend_id == current_user.id:
-        raise HTTPException(status_code=400, detail="You cannot friend yourself")
+        raise HTTPException(status_code=400,
+                            detail="You cannot friend yourself")
 
-    cond_a = and_(Friendship.user_id == current_user.id, Friendship.friend_id == friend_id)
-    cond_b = and_(Friendship.user_id == friend_id, Friendship.friend_id == current_user.id)
+    cond_a = and_(Friendship.user_id == current_user.id,
+                  Friendship.friend_id == friend_id)
+    cond_b = and_(Friendship.user_id == friend_id,
+                  Friendship.friend_id == current_user.id)
     existing = db.query(Friendship).filter(or_(cond_a, cond_b)).first()
 
     if existing:
         if existing.status == FriendshipStatus.accepted:
-            raise HTTPException(status_code=400, detail="You are already friends")
+            raise HTTPException(status_code=400,
+                                detail="You are already friends")
         else:
-            raise HTTPException(status_code=400, detail="Friend request already exists")
+            raise HTTPException(status_code=400,
+                                detail="Friend request already exists")
 
-    friendship = Friendship(user_id=current_user.id, friend_id=friend_id)
+    friendship = Friendship(user_id=current_user.id,
+                            friend_id=friend_id)
     db.add(friendship)
     db.commit()
     db.refresh(friendship)
     return friendship
 
 
-@router.post("/friends/accept/{friend_id}", response_model=FriendRequestResponse)
+@router.post("/friends/accept/{friend_id}",
+             response_model=FriendRequestResponse)
 def accept_friend_request(friend_id: int,
                           db: Session = Depends(get_db),
                           current_user: User = Depends(get_current_user)):
@@ -64,7 +71,8 @@ def accept_friend_request(friend_id: int,
         Friendship.friend_id == current_user.id
     ).first()
     if not friendship:
-        raise HTTPException(status_code=404, detail="Demande d'ami introuvable")
+        raise HTTPException(status_code=404,
+                            detail="Demande d'ami introuvable")
     friendship.status = FriendshipStatus.accepted
     db.commit()
     db.refresh(friendship)
@@ -84,7 +92,8 @@ def cancel_friend_request(
         Friendship.status == FriendshipStatus.pending
     ).first()
     if not friendship:
-        raise HTTPException(status_code=404, detail="Friend request not found")
+        raise HTTPException(status_code=404,
+                            detail="Friend request not found")
     db.delete(friendship)
     db.commit()
     return {"message": "Friend request cancelled"}
@@ -103,7 +112,8 @@ def decline_friend_request(
         Friendship.status == FriendshipStatus.pending
     ).first()
     if not friendship:
-        raise HTTPException(status_code=404, detail="Friend request not found")
+        raise HTTPException(status_code=404,
+                            detail="Friend request not found")
     db.delete(friendship)
     db.commit()
     return {"message": "Friend request declined"}
@@ -133,7 +143,8 @@ def get_friends(
     return friends
 
 
-@router.get("/friends/pending", response_model=list[FriendRequestResponse])
+@router.get("/friends/pending",
+            response_model=list[FriendRequestResponse])
 def get_pending_requests(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
@@ -155,15 +166,18 @@ def remove_friend(
         db.query(Friendship)
         .filter(
             or_(
-                and_(Friendship.user_id == current_user.id, Friendship.friend_id == friend_id),
-                and_(Friendship.user_id == friend_id, Friendship.friend_id == current_user.id)
+                and_(Friendship.user_id == current_user.id,
+                     Friendship.friend_id == friend_id),
+                and_(Friendship.user_id == friend_id,
+                     Friendship.friend_id == current_user.id)
             ),
             Friendship.status == FriendshipStatus.accepted
         )
         .first()
     )
     if not friendship:
-        raise HTTPException(status_code=404, detail="Friend not found")
+        raise HTTPException(status_code=404,
+                            detail="Friend not found")
     db.delete(friendship)
     db.commit()
     return {"message": f"Friend {friend_id} removed"}
@@ -203,7 +217,8 @@ async def create_post(
     return new_post
 
 
-@router.get("/feed", response_model=list[OutfitPostResponse])
+@router.get("/feed",
+            response_model=list[OutfitPostResponse])
 def get_feed(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
@@ -241,7 +256,8 @@ def delete_post(post_id: int,
         OutfitPost.user_id == current_user.id
     ).first()
     if not post:
-        raise HTTPException(status_code=404, detail="Post introuvable")
+        raise HTTPException(status_code=404,
+                            detail="Post introuvable")
     db.delete(post)
     db.commit()
     return {"message": "Post supprimé"}
@@ -249,7 +265,8 @@ def delete_post(post_id: int,
 
 # ─── MESSAGES ─────────────────────────────────────────────
 
-@router.post("/messages/{receiver_id}", response_model=MessageResponse)
+@router.post("/messages/{receiver_id}",
+             response_model=MessageResponse)
 def send_message(
     receiver_id: int,
     message: MessageCreate,
@@ -257,7 +274,8 @@ def send_message(
     current_user: User = Depends(get_current_user)
 ):
     if receiver_id == current_user.id:
-        raise HTTPException(status_code=400, detail="You cannot send a message to yourself.")
+        raise HTTPException(status_code=400,
+                            detail="You cannot send a message to yourself.")
 
     new_message = Message(
         sender_id=current_user.id,
@@ -270,7 +288,8 @@ def send_message(
     return new_message
 
 
-@router.get("/messages/{receiver_id}", response_model=list[MessageResponse])
+@router.get("/messages/{receiver_id}",
+            response_model=list[MessageResponse])
 def get_messages(
     receiver_id: int,
     db: Session = Depends(get_db),
@@ -280,8 +299,10 @@ def get_messages(
         db.query(Message)
         .filter(
             or_(
-                and_(Message.sender_id == current_user.id, Message.receiver_id == receiver_id),
-                and_(Message.sender_id == receiver_id, Message.receiver_id == current_user.id)
+                and_(Message.sender_id == current_user.id,
+                     Message.receiver_id == receiver_id),
+                and_(Message.sender_id == receiver_id,
+                     Message.receiver_id == current_user.id)
             )
         )
         .order_by(Message.created_at.asc())
