@@ -30,6 +30,7 @@ def _format_wardrobe(items: list[Clothing]) -> list[dict]:
             "pattern": item.pattern,
             "brand":   item.brand,
             "image":   item.image_bg_removed_url,
+            "is_favorite": item.is_favorite,
         }
         for item in items
     ]

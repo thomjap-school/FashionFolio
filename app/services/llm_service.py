@@ -51,6 +51,7 @@ RÈGLES STRICTES :
 - Tu n'inventes AUCUN vêtement inexistant dans le dressing
 - Tu évites de répéter les tenues déjà suggérées
 - Tu adaptes la tenue à la météo actuelle
+- Tu privilégies les vêtements marqués comme favoris (is_favorite: true)
 
 DRESSING DE L'UTILISATEUR :
 {wardrobe_text}

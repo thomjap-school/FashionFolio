@@ -202,6 +202,24 @@ async def update_clothing(
     return item
 
 
+@router.patch("/{clothing_id}/favorite", response_model=ClothingResponse)
+async def toggle_favorite(
+    clothing_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    item = db.query(Clothing).filter(
+        Clothing.id == clothing_id,
+        Clothing.user_id == current_user.id,
+    ).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Article non trouvé")
+    item.is_favorite = not item.is_favorite
+    db.commit()
+    db.refresh(item)
+    return item
+
+
 @router.delete("/{clothing_id}", status_code=200)
 async def delete_clothing(
     clothing_id: int,

@@ -66,6 +66,7 @@ class ClothingResponse(BaseModel):
     image_url: Optional[str] = None
     image_bg_removed_url: Optional[str] = None
     created_at: datetime
+    is_favorite: bool = False
 
     class Config:
         from_attributes = True
