@@ -15,4 +15,4 @@ class User(Base):
     profile_picture = Column(String, nullable=True)
     created_at = Column(DateTime, server_default=func.now())
     clothings = relationship("Clothing", back_populates="user")
-    # outfits = relationship("Outfit", back_populates="user")
+    outfits = relationship("Outfit", back_populates="user")

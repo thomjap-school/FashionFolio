@@ -4,6 +4,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 from typing import Any
+import uuid
+from pathlib import Path
+from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Form
 
 from app.core.database import get_db
 from app.dependencies.auth import get_current_user
@@ -143,10 +146,32 @@ def remove_friend(
 
 
 @router.post("/posts", response_model=OutfitPostResponse)
-def create_post(post: OutfitPostCreate,
-                db: Session = Depends(get_db),
-                current_user: User = Depends(get_current_user)):
-    new_post = OutfitPost(user_id=current_user.id, **post.model_dump())
+async def create_post(
+    outfit_data: str = Form(...),
+    caption: str = Form(None),
+    file: UploadFile = File(None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    photo_url = None
+
+    if file:
+        upload_dir = Path(f"uploads/posts/{current_user.id}")
+        upload_dir.mkdir(parents=True, exist_ok=True)
+        unique_prefix = uuid.uuid4().hex[:8]
+        filename = f"{unique_prefix}_{file.filename}"
+        file_path = upload_dir / filename
+        content = await file.read()
+        with open(file_path, "wb") as f:
+            f.write(content)
+        photo_url = f"/uploads/posts/{current_user.id}/{filename}"
+
+    new_post = OutfitPost(
+        user_id=current_user.id,
+        outfit_data=outfit_data,
+        caption=caption,
+        photo_url=photo_url
+    )
     db.add(new_post)
     db.commit()
     db.refresh(new_post)

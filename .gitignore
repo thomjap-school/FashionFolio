@@ -8,3 +8,4 @@ venv/
 .DS_Store
 fashionfolio-backend/app/.env
 uploads/clothing/*
+uploads/posts/*

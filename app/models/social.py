@@ -29,6 +29,7 @@ class OutfitPost(Base):
     user_id = Column(Integer, ForeignKey("users.id"))
     outfit_data = Column(String)  # JSON stringify de la tenue
     caption = Column(String, nullable=True)
+    photo_url = Column(String, nullable=True)
     created_at = Column(DateTime, server_default=func.now())
 
 

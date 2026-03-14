@@ -37,6 +37,7 @@ class OutfitPostResponse(BaseModel):
     user_id: int
     outfit_data: str
     caption: str | None
+    photo_url: str | None
     created_at: datetime
 
     class Config:
