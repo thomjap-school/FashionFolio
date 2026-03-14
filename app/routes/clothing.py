@@ -140,6 +140,32 @@ async def get_wardrobe(
     return items
 
 
+@router.get("/stats")
+async def get_wardrobe_stats(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    items = db.query(Clothing).filter_by(user_id=current_user.id).all()
+
+    if not items:
+        return {"total": 0}
+
+    from collections import Counter
+
+    types = Counter(item.type for item in items if item.type)
+    colors = Counter(item.color for item in items if item.color)
+    styles = Counter(item.style for item in items if item.style)
+
+    return {
+        "total": len(items),
+        "by_type": dict(types.most_common()),
+        "by_color": dict(colors.most_common()),
+        "by_style": dict(styles.most_common()),
+        "most_common_type": types.most_common(1)[0][0] if types else None,
+        "most_common_color": colors.most_common(1)[0][0] if colors else None,
+    }
+
+
 @router.get("/{clothing_id}", response_model=ClothingResponse)
 async def get_clothing(
     clothing_id: int,

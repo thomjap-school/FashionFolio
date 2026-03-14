@@ -11,7 +11,9 @@ from app.models.user import User
 from app.schemas.chat import ChatRequest, ChatResponse
 from app.services.llm_service import generate_outfit, clear_history
 from app.services.weather_service import get_weather
-from app.services.llm_service import generate_outfit, clear_history, get_history
+from app.services.llm_service import (generate_outfit,
+                                      clear_history,
+                                      get_history)
 
 
 router = APIRouter(prefix="/chat", tags=["chat"])
@@ -84,7 +86,8 @@ def get_session_history(
 ):
     history = get_history(session_id)
     if not history:
-        raise HTTPException(status_code=404, detail="Session not found or empty")
+        raise HTTPException(status_code=404,
+                            detail="Session not found or empty")
     return {"session_id": session_id, "history": history}
 
 
