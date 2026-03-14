@@ -198,7 +198,7 @@ def get_feed(
     friend_ids = list({
         f.friend_id if f.user_id == current_user.id else f.user_id
         for f in friends
-    })
+    }) | {current_user.id}
 
     # 2. Requête des posts (formatée verticalement)
     posts = (
