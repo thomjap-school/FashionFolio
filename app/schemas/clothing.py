@@ -31,7 +31,18 @@ class ClothingUpdate(BaseModel):
     price: Optional[float] = None
     description: Optional[str] = None
     image_url: Optional[str] = None
-    @field_validator('name', 'type', 'color', 'style', 'pattern', 'brand', 'description', 'image_url', mode='before')
+
+    @field_validator(
+            'name',
+            'type',
+            'color',
+            'style',
+            'pattern',
+            'brand',
+            'description',
+            'image_url',
+            mode='before'
+        )
     @classmethod
     def empty_string_to_none(cls, v):
         if v == "string" or v == "":

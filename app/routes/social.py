@@ -40,18 +40,31 @@ def send_friend_request(
     if friend_id == current_user.id:
         raise HTTPException(status_code=400,
                             detail="You cannot friend yourself")
-    existing = db.query(Friendship).filter(
-        ((Friendship.user_id == current_user.id) & (Friendship.friend_id == friend_id)) |
-        ((Friendship.user_id == friend_id) & (Friendship.friend_id == current_user.id))
-    ).first()
+    cond_a = and_(
+        Friendship.user_id == current_user.id,
+        Friendship.friend_id == friend_id
+    )
+    cond_b = and_(
+        Friendship.user_id == friend_id,
+        Friendship.friend_id == current_user.id
+    )
+
+    existing = (
+        db.query(Friendship)
+        .filter(or_(cond_a, cond_b))
+        .first()
+    )
 
     if existing:
         if existing.status == FriendshipStatus.accepted:
-            raise HTTPException(status_code=400, detail="You are already friends")
+            raise HTTPException(status_code=400,
+                                detail="You are already friends")
         else:
-            raise HTTPException(status_code=400, detail="Friend request already exists")
+            raise HTTPException(status_code=400,
+                                detail="Friend request already exists")
 
-    friendship = Friendship(user_id=current_user.id, friend_id=friend_id)
+    friendship = Friendship(user_id=current_user.id,
+                            friend_id=friend_id)
 
     db.add(friendship)
     db.commit()
@@ -79,16 +92,55 @@ def accept_friend_request(friend_id: int,
 
 
 @router.get("/friends", response_model=list[FriendRequestResponse])
-def get_friends(db: Session = Depends(get_db),
-                current_user: User = Depends(get_current_user)):
-    friends = db.query(Friendship).filter(
-        ((Friendship.user_id == current_user.id) | (Friendship.friend_id == current_user.id)),
-        Friendship.status == FriendshipStatus.accepted
-    ).all()
+def get_friends(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    friends = (
+        db.query(Friendship)
+        .filter(
+            or_(
+                Friendship.user_id == current_user.id,
+                Friendship.friend_id == current_user.id
+            ),
+            Friendship.status == FriendshipStatus.accepted
+        )
+        .all()
+    )
     return friends
 
 
+@router.delete("/friends/{friend_id}")
+def remove_friend(
+    friend_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    friendship = (
+        db.query(Friendship)
+        .filter(
+            or_(
+                and_(
+                    Friendship.user_id == current_user.id,
+                    Friendship.friend_id == friend_id
+                ),
+                and_(
+                    Friendship.user_id == friend_id,
+                    Friendship.friend_id == current_user.id
+                )
+            ),
+            Friendship.status == FriendshipStatus.accepted
+        )
+        .first()
+    )
+    if not friendship:
+        raise HTTPException(status_code=404, detail="Friend not found")
+    db.delete(friendship)
+    db.commit()
+    return {"message": f"Friend {friend_id} removed"}
+
 # ─── OUTFIT POSTS ─────────────────────────────────────────
+
 
 @router.post("/posts", response_model=OutfitPostResponse)
 def create_post(post: OutfitPostCreate,
@@ -102,18 +154,34 @@ def create_post(post: OutfitPostCreate,
 
 
 @router.get("/feed", response_model=list[OutfitPostResponse])
-def get_feed(db: Session = Depends(get_db),
-             current_user: User = Depends(get_current_user)):
-    friends = db.query(Friendship).filter(
-        ((Friendship.user_id == current_user.id) | (Friendship.friend_id == current_user.id)),
-        Friendship.status == FriendshipStatus.accepted
-    ).all()
-    friend_ids = list(set(
-        [f.friend_id if f.user_id == current_user.id else f.user_id for f in friends]
-    ))
-    posts = db.query(OutfitPost).filter(
-        OutfitPost.user_id.in_(friend_ids)
-    ).order_by(OutfitPost.created_at.desc()).all()
+def get_feed(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    friends = (
+        db.query(Friendship)
+        .filter(
+            or_(
+                Friendship.user_id == current_user.id,
+                Friendship.friend_id == current_user.id
+            ),
+            Friendship.status == FriendshipStatus.accepted
+        )
+        .all()
+    )
+# 1. Extraction des IDs (découpée pour la lisibilité)
+    friend_ids = list({
+        f.friend_id if f.user_id == current_user.id else f.user_id
+        for f in friends
+    })
+
+    # 2. Requête des posts (formatée verticalement)
+    posts = (
+        db.query(OutfitPost)
+        .filter(OutfitPost.user_id.in_(friend_ids))
+        .order_by(OutfitPost.created_at.desc())
+        .all()
+    )
     return posts
 
 

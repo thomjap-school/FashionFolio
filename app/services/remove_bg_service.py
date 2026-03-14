@@ -1,4 +1,5 @@
-"""app/services/remove_bg_service.py -- Service pour intégration avec l'API remove.bg."""
+"""app/services/remove_bg_service.py --
+    Service pour intégration avec l'API remove.bg."""
 
 import os
 import requests

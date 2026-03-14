@@ -45,11 +45,11 @@ TENUES DÉJÀ SUGGÉRÉES (à éviter) :
 
 FORMAT DE RÉPONSE JSON OBLIGATOIRE :
 {{
-  "haut": {{"id": 1, "nom": "T-shirt blanc", "marque": "Zara", "image": "/uploads/clothing/1/xxx.png"}},
-  "bas": {{"id": 2, "nom": "Jean bleu", "marque": "Levi's", "image": "/uploads/clothing/1/xxx.png"}},
-  "chaussures": {{"id": 3, "nom": "Baskets blanches", "marque": "Nike", "image": "/uploads/clothing/1/xxx.png"}},
+  "haut": {{"id": 1, "nom": "...", "marque": "...", "image": "..."}},
+  "bas": {{"id": 2, "nom": "...", "marque": "...", "image": "..."}},
+  "chaussures": {{"id": 3, "nom": "...", "marque": "...", "image": "..."}},
   "accessoire": null,
-  "description": "Tenue casual parfaite pour la journée"
+  "description": "..."
 }}
 
 Demande utilisateur : {user_message}
