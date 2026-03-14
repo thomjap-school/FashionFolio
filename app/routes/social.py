@@ -247,6 +247,61 @@ def get_feed(
     return posts
 
 
+@router.post("/posts/{post_id}/clone")
+async def clone_outfit(
+    post_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    # 1. Récupérer le post
+    post = db.query(OutfitPost).filter(OutfitPost.id == post_id).first()
+    if not post:
+        raise HTTPException(status_code=404, detail="Post introuvable")
+
+    # 2. Récupérer la wardrobe de l'utilisateur
+    from app.models.clothing import Clothing
+    from app.services.llm_service import generate_outfit
+
+    wardrobe_items = db.query(Clothing).filter(
+        Clothing.user_id == current_user.id
+    ).all()
+
+    if not wardrobe_items:
+        raise HTTPException(status_code=400, detail="Ton dressing est vide.")
+
+    wardrobe = [
+        {
+            "id": item.id,
+            "name": item.name,
+            "type": item.type,
+            "color": item.color,
+            "style": item.style,
+            "pattern": item.pattern,
+            "brand": item.brand,
+            "image": item.image_bg_removed_url,
+            "is_favorite": item.is_favorite,
+        }
+        for item in wardrobe_items
+    ]
+
+    # 3. Demander au LLM de reproduire la tenue avec la wardrobe
+    import uuid
+    session_id = str(uuid.uuid4())
+    message = f"Reproduis cette tenue le plus fidèlement possible avec ma garde-robe : {post.outfit_data}"
+
+    result = await generate_outfit(
+        user_message=message,
+        wardrobe=wardrobe,
+        session_id=session_id,
+    )
+
+    return {
+        "original_post_id": post_id,
+        "cloned_outfit": result.get("outfit", {}),
+        "message": result.get("message", ""),
+    }
+
+
 @router.delete("/posts/{post_id}")
 def delete_post(post_id: int,
                 db: Session = Depends(get_db),
