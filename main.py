@@ -11,6 +11,7 @@ from app.routes.users import router as users_router
 from app.routes.clothing import router as clothing_router
 from app.routes.chat import router as chat_router
 from app.routes.health import router as health_router
+from app.routes.trends import router as trends_router
 
 Base.metadata.create_all(bind=engine)
 
@@ -27,6 +28,8 @@ app.include_router(social_router)
 app.include_router(clothing_router)
 app.include_router(chat_router)
 app.include_router(health_router)
+app.include_router(trends_router)
+
 
 @app.get("/")
 def root():
