@@ -40,8 +40,17 @@ def send_friend_request(
     if friend_id == current_user.id:
         raise HTTPException(status_code=400,
                             detail="You cannot friend yourself")
+    existing = db.query(Friendship).filter(
+        ((Friendship.user_id == current_user.id) & (Friendship.friend_id == friend_id)) |
+        ((Friendship.user_id == friend_id) & (Friendship.friend_id == current_user.id))
+    ).first()
 
-    # 2. Création de l'entrée
+    if existing:
+        if existing.status == FriendshipStatus.accepted:
+            raise HTTPException(status_code=400, detail="You are already friends")
+        else:
+            raise HTTPException(status_code=400, detail="Friend request already exists")
+
     friendship = Friendship(user_id=current_user.id, friend_id=friend_id)
 
     db.add(friendship)
@@ -73,7 +82,7 @@ def accept_friend_request(friend_id: int,
 def get_friends(db: Session = Depends(get_db),
                 current_user: User = Depends(get_current_user)):
     friends = db.query(Friendship).filter(
-        Friendship.user_id == current_user.id,
+        ((Friendship.user_id == current_user.id) | (Friendship.friend_id == current_user.id)),
         Friendship.status == FriendshipStatus.accepted
     ).all()
     return friends
@@ -96,10 +105,12 @@ def create_post(post: OutfitPostCreate,
 def get_feed(db: Session = Depends(get_db),
              current_user: User = Depends(get_current_user)):
     friends = db.query(Friendship).filter(
-        Friendship.user_id == current_user.id,
+        ((Friendship.user_id == current_user.id) | (Friendship.friend_id == current_user.id)),
         Friendship.status == FriendshipStatus.accepted
     ).all()
-    friend_ids = [f.friend_id for f in friends]
+    friend_ids = list(set(
+        [f.friend_id if f.user_id == current_user.id else f.user_id for f in friends]
+    ))
     posts = db.query(OutfitPost).filter(
         OutfitPost.user_id.in_(friend_ids)
     ).order_by(OutfitPost.created_at.desc()).all()
