@@ -17,3 +17,9 @@ class ChatResponse(BaseModel):
     message: str
     outfit: dict
     occasion: str
+
+
+class ChatRequest(BaseModel):
+    message: str
+    session_id: str | None = None
+    city: str = "Paris"

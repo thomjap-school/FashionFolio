@@ -10,6 +10,7 @@ from app.models.clothing import Clothing
 from app.models.user import User
 from app.schemas.chat import ChatRequest, ChatResponse
 from app.services.llm_service import generate_outfit, clear_history
+from app.services.weather_service import get_weather
 
 
 router = APIRouter(prefix="/chat", tags=["chat"])
@@ -53,10 +54,16 @@ async def chat(
     wardrobe = _format_wardrobe(wardrobe_items)
 
     try:
+        weather = await get_weather(body.city)
+    except Exception:
+        weather = None
+
+    try:
         result = await generate_outfit(
             user_message=body.message,
             wardrobe=wardrobe,
             session_id=session_id,
+            weather=weather,
         )
     except RuntimeError as e:
         raise HTTPException(status_code=503, detail=str(e))

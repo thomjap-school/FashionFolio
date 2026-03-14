@@ -18,13 +18,18 @@ def clear_history(session_id: str):
     _session_history.pop(session_id, None)
 
 
-def build_prompt(wardrobe: list, history: list, user_message: str) -> str:
+def build_prompt(wardrobe: list, history: list, user_message: str, weather: dict = None) -> str:
     """Construire le prompt pour le LLM avec le dressing et l'historique."""
     wardrobe_text = json.dumps(wardrobe, ensure_ascii=False, indent=2)
     history_text = (
         json.dumps(history, ensure_ascii=False)
         if history
         else "Aucune tenue suggérée pour le moment."
+    )
+    weather_text = (
+        f"Météo actuelle à {weather['city']} : {weather['temperature']}°C, {weather['description']}."
+        if weather
+        else "Météo inconnue."
     )
 
     return f"""
@@ -36,12 +41,16 @@ RÈGLES STRICTES :
 - Tu ne réponds PAS aux questions hors mode
 - Tu n'inventes AUCUN vêtement inexistant dans le dressing
 - Tu évites de répéter les tenues déjà suggérées
+- Tu adaptes la tenue à la météo actuelle
 
 DRESSING DE L'UTILISATEUR :
 {wardrobe_text}
 
 TENUES DÉJÀ SUGGÉRÉES (à éviter) :
 {history_text}
+
+MÉTÉO ACTUELLE :
+{weather_text}
 
 FORMAT DE RÉPONSE JSON OBLIGATOIRE :
 {{
@@ -60,10 +69,11 @@ async def generate_outfit(
     user_message: str,
     wardrobe: list,
     session_id: str,
+    weather: dict = None,
 ) -> dict:
     """Générer une tenue avec le LLM Gemini."""
     history = _session_history.get(session_id, [])
-    prompt = build_prompt(wardrobe, history, user_message)
+    prompt = build_prompt(wardrobe, history, user_message, weather)
 
     response = client.models.generate_content(
         model=os.getenv("GEMINI_MODEL"),
