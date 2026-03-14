@@ -7,6 +7,7 @@ from typing import Any
 import uuid
 from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Form
+from app.schemas.user import UserResponse
 
 from app.core.database import get_db
 from app.dependencies.auth import get_current_user
@@ -94,12 +95,12 @@ def accept_friend_request(friend_id: int,
     return friendship
 
 
-@router.get("/friends", response_model=list[FriendRequestResponse])
+@router.get("/friends", response_model=list[UserResponse])
 def get_friends(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    friends = (
+    friendships = (
         db.query(Friendship)
         .filter(
             or_(
@@ -110,7 +111,26 @@ def get_friends(
         )
         .all()
     )
+
+    friend_ids = [
+        f.friend_id if f.user_id == current_user.id else f.user_id
+        for f in friendships
+    ]
+
+    friends = db.query(User).filter(User.id.in_(friend_ids)).all()
     return friends
+
+
+@router.get("/friends/pending", response_model=list[FriendRequestResponse])
+def get_pending_requests(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    pending = db.query(Friendship).filter(
+        Friendship.friend_id == current_user.id,
+        Friendship.status == FriendshipStatus.pending
+    ).all()
+    return pending
 
 
 @router.delete("/friends/{friend_id}")
