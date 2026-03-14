@@ -1,8 +1,8 @@
-"""Schémas Pydantic pour les vêtements."""
+"""app/schemas/clothing.py -- Schémas Pydantic pour les vêtements."""
 
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 
 class ClothingCreate(BaseModel):
@@ -31,6 +31,12 @@ class ClothingUpdate(BaseModel):
     price: Optional[float] = None
     description: Optional[str] = None
     image_url: Optional[str] = None
+    @field_validator('name', 'type', 'color', 'style', 'pattern', 'brand', 'description', 'image_url', mode='before')
+    @classmethod
+    def empty_string_to_none(cls, v):
+        if v == "string" or v == "":
+            return None
+        return v
 
 
 class ClothingResponse(BaseModel):

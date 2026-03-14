@@ -1,3 +1,5 @@
+"""app/services/llm_service.py"""
+
 import json
 import os
 from dotenv import load_dotenv
@@ -43,9 +45,9 @@ TENUES DÉJÀ SUGGÉRÉES (à éviter) :
 
 FORMAT DE RÉPONSE JSON OBLIGATOIRE :
 {{
-  "haut": {{"id": 1, "nom": "T-shirt blanc", "marque": "Zara"}},
-  "bas": {{"id": 2, "nom": "Jean bleu", "marque": "Levi's"}},
-  "chaussures": {{"id": 3, "nom": "Baskets blanches", "marque": "Nike"}},
+  "haut": {{"id": 1, "nom": "T-shirt blanc", "marque": "Zara", "image": "/uploads/clothing/1/xxx.png"}},
+  "bas": {{"id": 2, "nom": "Jean bleu", "marque": "Levi's", "image": "/uploads/clothing/1/xxx.png"}},
+  "chaussures": {{"id": 3, "nom": "Baskets blanches", "marque": "Nike", "image": "/uploads/clothing/1/xxx.png"}},
   "accessoire": null,
   "description": "Tenue casual parfaite pour la journée"
 }}

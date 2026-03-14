@@ -10,3 +10,4 @@ google-genai
 python-dotenv
 passlib[bcrypt]
 bcrypt==4.0.1
+email-validator

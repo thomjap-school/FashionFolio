@@ -1,3 +1,5 @@
+"""app/models/clothing.py"""
+
 from sqlalchemy import (
     Column,
     DateTime,

@@ -16,6 +16,7 @@ from app.schemas.clothing import (
     ClothingUpdate,
 )
 from app.services.remove_bg_service import process_clothing_image
+from app.services.image_recognition import recognize_clothing
 
 
 router = APIRouter(prefix="/clothing", tags=["clothing"])
@@ -51,9 +52,9 @@ async def create_clothing(
 @router.post("/upload", response_model=ClothingResponse)
 async def upload_clothing_with_image(
     file: UploadFile = File(...),
-    name: str = Form(...),
-    type: str = Form(...),
-    color: str = Form(...),
+    name: str = Form(None),
+    type: str = Form(None),
+    color: str = Form(None),
     style: str = Form(None),
     pattern: str = Form(None),
     brand: str = Form(None),
@@ -73,6 +74,18 @@ async def upload_clothing_with_image(
     with open(original_path, "wb") as f:
         f.write(content)
 
+    # Nettoyer les valeurs "string" par défaut de Swagger
+    def clean(v):
+        return None if v in ("string", "", "0") else v
+
+    name = clean(name)
+    type = clean(type)
+    color = clean(color)
+    style = clean(style)
+    pattern = clean(pattern)
+    brand = clean(brand)
+    description = clean(description)
+
     try:
         image_url, image_bg_removed_url = await (
             process_clothing_image(str(original_path), current_user.id)
@@ -81,6 +94,19 @@ async def upload_clothing_with_image(
         print(f"[remove.bg] Erreur : {e}")
         image_url = f"/uploads/clothing/{current_user.id}/{original_filename}"
         image_bg_removed_url = image_url
+
+    try:
+        detected = await recognize_clothing(str(original_path))
+        name = name or detected.get("name")
+        type = type or detected.get("type", "other")
+        color = color or detected.get("color", "unknown")
+        style = style or detected.get("style")
+        pattern = pattern or detected.get("pattern")
+        description = description or detected.get("description")
+    except Exception as e:
+        print(f"[image_recognition] Erreur : {e}")
+        type = type or "other"
+        color = color or "unknown"
 
     new_clothing = Clothing(
         user_id=current_user.id,
@@ -150,7 +176,7 @@ async def update_clothing(
     return item
 
 
-@router.delete("/{clothing_id}", status_code=204)
+@router.delete("/{clothing_id}", status_code=200)
 async def delete_clothing(
     clothing_id: int,
     db: Session = Depends(get_db),
@@ -164,3 +190,4 @@ async def delete_clothing(
         raise HTTPException(status_code=404, detail="Article non trouvé")
     db.delete(item)
     db.commit()
+    return {"message": f"Article {clothing_id} supprimé avec succès"}

@@ -1,4 +1,3 @@
-# Group massal_j 1071814
 # FashionFolio — Backend
 
 Small backend built with FastAPI for the FashionFolio project (clothing management, outfits and chat/assistant).

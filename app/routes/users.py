@@ -1,3 +1,5 @@
+"""app/routes/users.py"""
+
 from fastapi import APIRouter, Depends
 from app.dependencies.auth import get_current_user
 from app.models.user import User

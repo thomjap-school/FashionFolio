@@ -25,6 +25,7 @@ def _format_wardrobe(items: list[Clothing]) -> list[dict]:
             "style":   item.style,
             "pattern": item.pattern,
             "brand":   item.brand,
+            "image":   item.image_bg_removed_url,
         }
         for item in items
     ]

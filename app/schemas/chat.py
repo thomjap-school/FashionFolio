@@ -1,4 +1,4 @@
-"""Schémas pour les requêtes/réponses du chat."""
+"""app/schemas/chat.py -- Schémas pour les requêtes/réponses du chat."""
 
 from pydantic import BaseModel
 
