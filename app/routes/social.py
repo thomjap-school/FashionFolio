@@ -194,13 +194,14 @@ def get_feed(
         )
         .all()
     )
-# 1. Extraction des IDs (découpée pour la lisibilité)
+
+    # 1. Extraction des IDs
     friend_ids = list({
         f.friend_id if f.user_id == current_user.id else f.user_id
         for f in friends
-    }) | {current_user.id}
+    } | {current_user.id})
 
-    # 2. Requête des posts (formatée verticalement)
+    # 2. Requête des posts
     posts = (
         db.query(OutfitPost)
         .filter(OutfitPost.user_id.in_(friend_ids))
