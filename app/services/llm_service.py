@@ -18,6 +18,11 @@ def clear_history(session_id: str):
     _session_history.pop(session_id, None)
 
 
+def get_history(session_id: str) -> list:
+    """Récupère l'historique d'une session."""
+    return _session_history.get(session_id, [])
+
+
 def build_prompt(wardrobe: list,
                  history: list,
                  user_message: str,
