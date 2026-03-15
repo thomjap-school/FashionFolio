@@ -9,3 +9,4 @@ venv/
 fashionfolio-backend/app/.env
 uploads/clothing/*
 uploads/posts/*
+fashionfoliocursor-app/node_modules
