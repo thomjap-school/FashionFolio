@@ -9,12 +9,11 @@ type ClothingItem = {
   style?: string | null;
   brand?: string | null;
   image_url?: string | null;
+  image_bg_removed_url?: string | null;
+  is_favorite?: boolean;
 };
 
 export function WardrobePage() {
-  const [name, setName] = useState("");
-  const [typeValue, setTypeValue] = useState("");
-  const [color, setColor] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [items, setItems] = useState<ClothingItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -54,18 +53,12 @@ export function WardrobePage() {
 
       const form = new FormData();
       form.append("file", file);
-      form.append("name", name);
-      form.append("type", typeValue);
-      form.append("color", color);
       await api.post("/clothing/upload", form, {
         headers: {
           ...authHeaders()
         }
       });
 
-      setName("");
-      setTypeValue("");
-      setColor("");
       setFile(null);
       await loadWardrobe();
     } catch {
@@ -75,47 +68,30 @@ export function WardrobePage() {
     }
   }
 
+  async function handleToggleFavorite(id: number) {
+    setError(null);
+    try {
+      const res = await api.patch<ClothingItem>(
+        `/clothing/${id}/favorite`,
+        null,
+        { headers: authHeaders() }
+      );
+      setItems((prev) =>
+        prev.map((item) => (item.id === id ? res.data : item))
+      );
+    } catch {
+      setError("Could not toggle favorite.");
+    }
+  }
+
   return (
     <section>
       <h1>Your Wardrobe</h1>
-      <p>Add simple clothing items to your digital closet.</p>
+      <p>Upload a clothing photo and let the AI fill in the details.</p>
 
       <form onSubmit={handleAdd} className="form">
         <label className="field">
-          <span>Name</span>
-          <input
-            type="text"
-            required
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Black hoodie"
-          />
-        </label>
-
-        <label className="field">
-          <span>Type</span>
-          <input
-            type="text"
-            required
-            value={typeValue}
-            onChange={(e) => setTypeValue(e.target.value)}
-            placeholder="top, pants, shoes..."
-          />
-        </label>
-
-        <label className="field">
-          <span>Color</span>
-          <input
-            type="text"
-            required
-            value={color}
-            onChange={(e) => setColor(e.target.value)}
-            placeholder="black, white, blue..."
-          />
-        </label>
-
-        <label className="field">
-          <span>Photo (optional)</span>
+          <span>Photo</span>
           <input
             type="file"
             accept="image/*"
@@ -133,11 +109,30 @@ export function WardrobePage() {
       {items.length > 0 && (
         <div className="list">
           {items.map((item) => (
-            <article key={item.id} className="card">
-              <p className="card-caption">
-                {item.name} · {item.type} · {item.color}
-              </p>
-              {item.brand && <p className="card-meta">{item.brand}</p>}
+            <article key={item.id} className="card card-row">
+              {item.image_bg_removed_url && (
+                <img
+                  src={item.image_bg_removed_url}
+                  alt={item.name}
+                  className="card-thumb"
+                />
+              )}
+              <div className="card-info">
+                <p className="card-caption">
+                  {item.name} · {item.type} · {item.color}
+                </p>
+                {item.brand && <p className="card-meta">{item.brand}</p>}
+              </div>
+              <button
+                type="button"
+                className={`favorite-button${
+                  item.is_favorite ? " favorite-button-active" : ""
+                }`}
+                onClick={() => handleToggleFavorite(item.id)}
+                aria-label="Toggle favorite"
+              >
+                ★
+              </button>
             </article>
           ))}
         </div>

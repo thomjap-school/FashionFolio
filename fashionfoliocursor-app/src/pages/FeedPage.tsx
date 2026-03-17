@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { api } from "../services/api";
 
 type FeedPost = {
@@ -11,6 +12,7 @@ type FeedPost = {
 };
 
 export function FeedPage() {
+  const navigate = useNavigate();
   const [caption, setCaption] = useState("");
   const [outfitData, setOutfitData] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -69,7 +71,7 @@ export function FeedPage() {
   return (
     <section>
       <h1>Social Feed</h1>
-      <p>Share an outfit and see posts from friends.</p>
+      <p>Post outfits with a caption and screenshot, and see your friends&apos; looks.</p>
 
       <form onSubmit={handleCreatePost} className="form">
         <label className="field">
@@ -112,11 +114,29 @@ export function FeedPage() {
         <div className="list">
           {posts.map((post) => (
             <article key={post.id} className="card">
+              {post.photo_url && (
+                <img
+                  className="card-image"
+                  src={post.photo_url}
+                  alt={post.caption || "Outfit photo"}
+                />
+              )}
               <p className="card-caption">{post.caption || "No caption"}</p>
+              <p className="card-meta">
+                {new Date(post.created_at).toLocaleString()}
+              </p>
               <pre className="card-outfit">
                 {post.outfit_data.slice(0, 200)}
                 {post.outfit_data.length > 200 ? "..." : ""}
               </pre>
+              <button
+                type="button"
+                className="primary-button"
+                style={{ marginTop: "0.75rem" }}
+                onClick={() => navigate(`/chat?clonePostId=${post.id}`)}
+              >
+                Clone this outfit with AI
+              </button>
             </article>
           ))}
         </div>

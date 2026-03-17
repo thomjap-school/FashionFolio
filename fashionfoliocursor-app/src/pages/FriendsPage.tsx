@@ -89,6 +89,31 @@ export function FriendsPage() {
     }
   }
 
+  async function handleAccept(friendId: number) {
+    setError(null);
+    try {
+      await api.post(`/social/friends/accept/${friendId}`, null, {
+        headers: authHeaders()
+      });
+      await loadFriends();
+      await loadPending();
+    } catch {
+      setError("Could not accept friend request.");
+    }
+  }
+
+  async function handleDecline(friendId: number) {
+    setError(null);
+    try {
+      await api.delete(`/social/friends/request/${friendId}/decline`, {
+        headers: authHeaders()
+      });
+      await loadPending();
+    } catch {
+      setError("Could not decline friend request.");
+    }
+  }
+
   return (
     <section>
       <h1>Friends & Users</h1>
@@ -148,6 +173,22 @@ export function FriendsPage() {
               <p className="card-caption">
                 Request from user #{req.user_id} to you (status: {req.status})
               </p>
+              <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem" }}>
+                <button
+                  type="button"
+                  className="primary-button"
+                  onClick={() => handleAccept(req.user_id)}
+                >
+                  Accept
+                </button>
+                <button
+                  type="button"
+                  className="link-button"
+                  onClick={() => handleDecline(req.user_id)}
+                >
+                  Ignore
+                </button>
+              </div>
             </article>
           ))}
         </div>
