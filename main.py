@@ -1,5 +1,9 @@
 from fastapi import FastAPI
 from fastapi.security import HTTPBearer
+from fastapi.middleware.cors import CORSMiddleware
+import os
+
+
 from app.core.database import Base, engine
 import app.models.user
 import app.models.social
@@ -18,6 +22,21 @@ Base.metadata.create_all(bind=engine)
 app = FastAPI(
     title="FashionFolio API",
     version="0.1.0",
+)
+
+# Allow browser frontend to call this API
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        os.getenv("EXPO_PUBLIC_API_URL"),
+        "http://localhost:8000",
+        os.getenv("NGROK"),
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 security = HTTPBearer()
