@@ -1,16 +1,20 @@
 # FashionFolio — Backend
 
-Small backend built with FastAPI for the FashionFolio project (clothing management, outfits and chat/assistant).
+Backend built with FastAPI for the FashionFolio project (clothing management, outfits, AI chat and social features).
 
 **Main features**
 - User, clothing and outfit management
 - REST API for clothing / outfit CRUD
 - LLM service integration for chat (app/services/llm_service.py)
 - Image background removal service (app/services/remove_bg_service.py)
-- Image storage in `uploads/clothing`
+- AI-powered clothing recognition via Gemini Vision
+- Weather integration via OpenWeatherMap
+- Google Trends integration for fashion trends
+- Social features: friends, posts, feed, messaging
 
 **Prerequisites**
-- Python 3.10+ (or 3.9 depending on the environment)
+- Python 3.10+
+- Docker & Docker Compose
 - See dependencies: [requirements.txt](requirements.txt)
 
 **Quick setup**
@@ -34,8 +38,10 @@ POSTGRES_DB="DB_name"
 DATABASE_URL="postgresql://fashionfolio:fashionfolio@db:5432/fashionfolio"
 
 GEMINI_API_KEY="your_gemini_api_key"
-GEMINI_MODEL="your_gemini_model"
+GEMINI_MODEL="gemini-2.0-flash"
 REMOVE_BG_API_KEY="your_removebg_api_key"
+WEATHER_API_KEY="your_openweathermap_api_key"
+SECRET_KEY="your_jwt_secret_key"
 ```
 
 3. Install dependencies:
@@ -46,22 +52,26 @@ pip install -r requirements.txt
 
 **Starting the application**
 
-From the repository root folder:
-
-Build:
+Build and run:
 ```bash
 docker compose up --build
 ```
-Or just run:
+
+Or just run (if already built):
 ```bash
 docker compose up
+```
+
+Reset all data (clears the database):
+```bash
+docker compose down -v
 ```
 
 ---
 
 ## 🗄️ Database
 
-The database uses **PostgreSQL** (via Docker). SQLAlchemy automatically translates Python classes into SQL tables at application startup.
+The database uses **PostgreSQL** (via Docker). SQLAlchemy automatically creates tables at startup.
 
 ### User model
 | Field | Description |
@@ -70,17 +80,15 @@ The database uses **PostgreSQL** (via Docker). SQLAlchemy automatically translat
 | `email` | Unique email address |
 | `password_hash` | Bcrypt-hashed password |
 | `username` | Display name |
-| `bio` | User biography |
-| `photo_url` | Profile picture URL |
+| `profile_picture` | Profile picture URL |
 | `created_at` | Account creation date |
-
-> Relations: one User owns multiple `Clothing` items and multiple `Outfit` records.
 
 ### Clothing model
 | Field | Description |
 |-------|-------------|
 | `id` | Primary key |
 | `user_id` | Foreign key → User |
+| `name` | Item name |
 | `type` | Item type (top, bottom, shoes...) |
 | `color` | Color |
 | `style` | Style (casual, formal...) |
@@ -89,68 +97,86 @@ The database uses **PostgreSQL** (via Docker). SQLAlchemy automatically translat
 | `price` | Price |
 | `image_url` | Original image URL |
 | `image_bg_removed_url` | Background-removed image URL |
-
-> These attributes are used by the LLM to compose coherent outfits.
+| `is_favorite` | Boolean — marked as favorite |
+| `auto_detected` | Boolean — attributes detected by AI |
 
 ### Outfit model
 | Field | Description |
 |-------|-------------|
 | `id` | Primary key |
 | `user_id` | Foreign key → User |
-| `items` | Full outfit stored as JSON |
-| `session_id` | Chat session identifier |
+| `haut_id` | FK → Clothing (top) |
+| `bas_id` | FK → Clothing (bottom) |
+| `chaussures_id` | FK → Clothing (shoes) |
+| `accessoire_id` | FK → Clothing (accessory) |
+| `description` | Outfit description |
 | `validated` | Boolean — user approved the outfit |
 | `created_at` | Generation date |
 
-> The `items` field stores the complete outfit as JSON: `{ top, bottom, shoes, accessory }`.
+### Social models
+
+**Friendship**
+| Field | Description |
+|-------|-------------|
+| `user_id` | FK → User (sender) |
+| `friend_id` | FK → User (receiver) |
+| `status` | `pending` or `accepted` |
+
+**OutfitPost**
+| Field | Description |
+|-------|-------------|
+| `user_id` | FK → User |
+| `outfit_data` | JSON stringified outfit |
+| `caption` | Optional caption |
+| `photo_url` | Optional photo URL |
+
+**Message**
+| Field | Description |
+|-------|-------------|
+| `sender_id` | FK → User |
+| `receiver_id` | FK → User |
+| `content` | Message content |
 
 ---
 
 ## 🤖 LLM Integration — Gemini
 
-### Configuration
-The API key is stored in the `.env` file and loaded via `python-dotenv`:
-```env
-GEMINI_API_KEY="your_gemini_api_key"
-GEMINI_MODEL="your_gemini_model"
-```
-
 ### Outfit generation flow
-1. Receive the user message and fetch their wardrobe from the database
-2. Build the prompt with the wardrobe and session history
-3. Call the Gemini API with strict rules (system prompt)
-4. Parse the JSON response returned by Gemini
-5. Return the structured outfit to the `/chat` endpoint
+1. Receive the user message + city (optional, default: Paris)
+2. Fetch the user's wardrobe and current weather
+3. Build the prompt with wardrobe, session history and weather context
+4. Call Gemini API with strict rules
+5. Parse the JSON response
+6. Return the structured outfit
 
 ### System prompt rules
-The system prompt defines strict LLM behavior:
-- Generate outfits **only** from items in the user's wardrobe
-- **Always** respond in JSON (`top`, `bottom`, `shoes`, `accessory`, `description`)
+- Generate outfits **only** from the user's wardrobe
+- **Always** respond in JSON
 - Never answer questions outside the fashion domain
-- Never invent clothing items that don't exist in the wardrobe
-- Avoid repeating outfits already suggested in the current session
+- Never invent non-existing clothing items
+- Avoid repeating outfits already suggested in the session
+- Prioritize **favorite** items (`is_favorite: true`)
+- Adapt outfit to **current weather**
 
 ### Expected JSON response format
 ```json
 {
-  "top":       { "id": 1, "name": "White t-shirt", "brand": "Zara" },
-  "bottom":    { "id": 2, "name": "Blue jeans",    "brand": "Levi's" },
-  "shoes":     { "id": 3, "name": "White sneakers", "brand": "Nike" },
-  "accessory": null,
+  "haut":       { "id": 1, "nom": "White t-shirt", "marque": "Zara", "image": "/uploads/..." },
+  "bas":        { "id": 2, "nom": "Blue jeans", "marque": "Levi's", "image": "/uploads/..." },
+  "chaussures": { "id": 3, "nom": "White sneakers", "marque": "Nike", "image": "/uploads/..." },
+  "accessoire": null,
   "description": "Perfect casual outfit for the day"
 }
 ```
 
-### Session memory management
-The LLM has no native memory. The history of already-suggested outfits is injected into each prompt to avoid repetitions. Session history is cleared via `DELETE /chat/{session_id}`.
-
 ---
 
-# 📚 API Documentation — FashionFolio
+## 📚 API Documentation
 
-Base URL: `http://localhost:8000`
+Base URL: `http://localhost:8000`  
+Interactive docs: `http://localhost:8000/docs`
 
-All protected routes require the following header:
+All protected routes require:
 ```
 Authorization: Bearer <access_token>
 ```
@@ -159,170 +185,41 @@ Authorization: Bearer <access_token>
 
 ## 🔐 Auth — `/auth`
 
-### `POST /auth/register` — Register
-Creates a user account and returns a JWT token.
-
-**Body (JSON):**
-```json
-{
-  "email": "alice@example.com",
-  "username": "alice",
-  "password": "mypassword123"
-}
-```
-
-**Response:**
-```json
-{
-  "access_token": "eyJhbGci..."
-}
-```
-
----
-
-### `POST /auth/login` — Login
-Authenticates a user and returns a JWT token.
-
-**Body (JSON):**
-```json
-{
-  "email": "alice@example.com",
-  "password": "mypassword123"
-}
-```
-
-**Response:**
-```json
-{
-  "access_token": "eyJhbGci..."
-}
-```
+| Method | Route | Description |
+|--------|-------|-------------|
+| `POST` | `/auth/register` | Register — returns JWT |
+| `POST` | `/auth/login` | Login — returns JWT |
 
 ---
 
 ## 👤 Users — `/users`
 
-### `GET /users/me` — Current user profile
-Returns the information of the currently authenticated user.
-
-> 🔒 Protected
-
-**Response:**
-```json
-{
-  "id": 1,
-  "email": "alice@example.com",
-  "username": "alice"
-}
-```
+| Method | Route | Description |
+|--------|-------|-------------|
+| `GET` | `/users/me` | Current user profile |
+| `GET` | `/users/search?username=xxx` | Search users by username |
 
 ---
 
 ## 👗 Clothing — `/clothing`
 
-> 🔒 All routes are protected
+> 🔒 All routes protected
 
-### `POST /clothing/` — Add a clothing item (without image)
-Creates an item with an already hosted image URL.
+| Method | Route | Description |
+|--------|-------|-------------|
+| `POST` | `/clothing/` | Add clothing item (no image) |
+| `POST` | `/clothing/upload` | Upload image + auto AI recognition |
+| `GET` | `/clothing/` | Get wardrobe |
+| `GET` | `/clothing/stats` | Wardrobe statistics |
+| `GET` | `/clothing/{id}` | Get item detail |
+| `PUT` | `/clothing/{id}` | Update item |
+| `PATCH` | `/clothing/{id}/favorite` | Toggle favorite |
+| `DELETE` | `/clothing/{id}` | Delete item |
 
-**Body (JSON):**
-```json
-{
-  "name": "White shirt",
-  "type": "top",
-  "color": "white",
-  "style": "casual",
-  "pattern": "plain",
-  "brand": "Uniqlo",
-  "price": 29.99,
-  "description": "Light summer shirt",
-  "image_url": "https://example.com/image.jpg"
-}
-```
-
-**Response:** `ClothingResponse` object (see bottom of section)
-
----
-
-### `POST /clothing/upload` — Add a clothing item with image
-Upload an image file + metadata via `multipart/form-data`. Background removal is applied automatically.
-
-**Form fields:**
-| Field | Type | Required |
-|-------|------|----------|
-| `file` | image file | ✅ |
-| `name` | string | ✅ |
-| `type` | string | ✅ |
-| `color` | string | ✅ |
-| `style` | string | ❌ |
-| `pattern` | string | ❌ |
-| `brand` | string | ❌ |
-| `price` | float | ❌ |
-| `description` | string | ❌ |
-
-**curl example:**
-```bash
-curl -X POST http://localhost:8000/clothing/upload \
-  -H "Authorization: Bearer <token>" \
-  -F "file=@shirt.jpg" \
-  -F "name=Blue shirt" \
-  -F "type=top" \
-  -F "color=blue"
-```
-
----
-
-### `GET /clothing/` — Wardrobe list
-Returns all items belonging to the authenticated user.
-
-**Response:** `list[ClothingResponse]`
-
----
-
-### `GET /clothing/{clothing_id}` — Item detail
-
-**URL parameter:** `clothing_id` (int)
-
-**Response:** `ClothingResponse`
-
----
-
-### `PUT /clothing/{clothing_id}` — Update an item
-
-**Body (JSON, all fields are optional):**
-```json
-{
-  "name": "New name",
-  "color": "red",
-  "price": 49.99
-}
-```
-
----
-
-### `DELETE /clothing/{clothing_id}` — Delete an item
-
-**Response:** `204 No Content`
-
----
-
-### `ClothingResponse` model
-```json
-{
-  "id": 1,
-  "user_id": 1,
-  "name": "White shirt",
-  "type": "top",
-  "color": "white",
-  "style": "casual",
-  "pattern": "plain",
-  "brand": "Uniqlo",
-  "price": 29.99,
-  "description": "Light summer shirt",
-  "image_url": "/uploads/clothing/1/abc123_shirt.jpg",
-  "image_bg_removed_url": "/uploads/clothing/1/abc123_shirt_nobg.png"
-}
-```
+### AI Recognition on upload
+When uploading an image, Gemini Vision automatically detects:
+- Item type, color, style, pattern, brand
+- Fields are only filled if not provided manually
 
 ---
 
@@ -330,155 +227,67 @@ Returns all items belonging to the authenticated user.
 
 > 🔒 Protected
 
-### `POST /chat/` — Generate an outfit via AI
-Sends a message to the LLM which suggests an outfit based on the user's wardrobe.
+| Method | Route | Description |
+|--------|-------|-------------|
+| `POST` | `/chat/` | Generate outfit via AI |
+| `GET` | `/chat/history/{session_id}` | Get session history |
+| `DELETE` | `/chat/{session_id}` | Reset session |
 
-**Body (JSON):**
+**Body for `POST /chat/`:**
 ```json
 {
-  "message": "I want a casual outfit to go to the cinema",
-  "session_id": "abc-123"
-}
-```
-> `session_id` is optional. If not provided, a new UUID is generated.
-
-**Response:**
-```json
-{
+  "message": "I want a casual outfit for today",
   "session_id": "abc-123",
-  "message": "Here's a casual look I'd suggest...",
-  "outfit": {
-    "top": { "id": 3, "name": "Grey t-shirt" },
-    "bottom": { "id": 7, "name": "Blue slim jeans" }
-  },
-  "occasion": "casual"
+  "city": "Paris"
 }
 ```
-
----
-
-### `DELETE /chat/{session_id}` — Reset a chat session
-
-**URL parameter:** `session_id` (string)
-
-**Response:** `204 No Content`
 
 ---
 
 ## 👥 Social — `/social`
 
-> 🔒 All routes are protected
+> 🔒 All routes protected
 
-### `POST /social/friends/request/{friend_id}` — Send a friend request
+### Friends
+| Method | Route | Description |
+|--------|-------|-------------|
+| `POST` | `/social/friends/request/{friend_id}` | Send friend request |
+| `POST` | `/social/friends/accept/{friend_id}` | Accept friend request |
+| `DELETE` | `/social/friends/request/{friend_id}/cancel` | Cancel sent request |
+| `DELETE` | `/social/friends/request/{friend_id}/decline` | Decline received request |
+| `GET` | `/social/friends` | Friends list (user profiles) |
+| `GET` | `/social/friends/pending` | Pending friend requests |
+| `DELETE` | `/social/friends/{friend_id}` | Remove friend |
 
-**URL parameter:** `friend_id` (int)
+### Posts & Feed
+| Method | Route | Description |
+|--------|-------|-------------|
+| `POST` | `/social/posts` | Share an outfit (with optional photo) |
+| `GET` | `/social/feed` | Friends' posts feed |
+| `DELETE` | `/social/posts/{post_id}` | Delete a post |
+| `POST` | `/social/posts/{post_id}/clone` | Clone a friend's outfit with your wardrobe |
 
-**Response:**
-```json
-{
-  "id": 1,
-  "user_id": 1,
-  "friend_id": 2,
-  "status": "pending"
-}
-```
-
----
-
-### `POST /social/friends/accept/{friend_id}` — Accept a friend request
-
-**URL parameter:** `friend_id` (int — the user who sent the request)
-
-**Response:** friendship object with `status: "accepted"`
-
----
-
-### `GET /social/friends` — Friends list
-Returns the accepted friendships of the authenticated user.
-
-**Response:** `list[FriendRequestResponse]`
+### Messages
+| Method | Route | Description |
+|--------|-------|-------------|
+| `POST` | `/social/messages/{receiver_id}` | Send a message |
+| `GET` | `/social/messages/{receiver_id}` | Get conversation |
 
 ---
 
-### `POST /social/posts` — Share an outfit
+## 🌤️ External — `/external`
 
-**Body (JSON):**
-```json
-{
-  "outfit_id": 5,
-  "caption": "Outfit of the day 🔥"
-}
-```
-
-**Response:** `OutfitPostResponse`
+| Method | Route | Description |
+|--------|-------|-------------|
+| `GET` | `/external/trends` | Current fashion trends via Google Trends |
 
 ---
 
-### `GET /social/feed` — News feed
-Returns posts from accepted friends, sorted by descending date.
+## ❤️ Health — `/health`
 
-**Response:** `list[OutfitPostResponse]`
-
----
-
-### `DELETE /social/posts/{post_id}` — Delete a post
-
-**Response:**
-```json
-{
-  "message": "Post deleted"
-}
-```
-
----
-
-### `POST /social/messages/{receiver_id}` — Send a message
-
-**URL parameter:** `receiver_id` (int)
-
-**Body (JSON):**
-```json
-{
-  "content": "Hey, I love your outfit!"
-}
-```
-
-**Response:** `MessageResponse`
-
----
-
-### `GET /social/messages/{receiver_id}` — Conversation with a user
-Returns all messages exchanged between the authenticated user and `receiver_id`, sorted by ascending date.
-
-**Response:** `list[MessageResponse]`
-
----
-
-## 🧪 Quick testing with curl
-
-```bash
-# 1. Register
-curl -X POST http://localhost:8000/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@test.com","username":"test","password":"test123"}'
-
-# 2. Login and retrieve the token
-TOKEN=$(curl -s -X POST http://localhost:8000/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@test.com","password":"test123"}' | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
-
-# 3. View your profile
-curl -H "Authorization: Bearer $TOKEN" http://localhost:8000/users/me
-
-# 4. View your wardrobe
-curl -H "Authorization: Bearer $TOKEN" http://localhost:8000/clothing/
-
-# 5. Chat with the AI
-curl -X POST http://localhost:8000/chat/ \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"message":"Suggest an outfit for work"}'
-```
+| Method | Route | Description |
+|--------|-------|-------------|
+| `GET` | `/health` | API + database health check |
 
 ---
 
@@ -489,22 +298,12 @@ curl -X POST http://localhost:8000/chat/ \
 | `400` | Invalid data (email already used, empty wardrobe, etc.) |
 | `401` | Missing or invalid token |
 | `404` | Resource not found |
+| `422` | Validation error (invalid email format, etc.) |
 | `503` | LLM service unavailable |
 
 ---
 
-> 💡 Interactive documentation available at `http://localhost:8000/docs` (Swagger UI)
-
----
-
-**Reset data**
-
-Delete the **volumes** created by Docker Compose:
-```bash
-docker compose down -v
-```
-
-## **Project structure (essentials)**
+## **Project structure**
 
 ```
 fashionfolio/
@@ -521,18 +320,23 @@ fashionfolio/
 │   │   └── social.py            # Friendship, posts, messages tables
 │   ├── routes/
 │   │   ├── auth.py              # POST /auth/register, /auth/login
-│   │   ├── users.py             # GET /users/me
-│   │   ├── clothing.py          # CRUD /clothing + image upload
-│   │   ├── chat.py              # POST /chat + DELETE /chat/{session_id}
-│   │   └── social.py            # Friends, posts, feed, messages
+│   │   ├── users.py             # GET /users/me, /users/search
+│   │   ├── clothing.py          # CRUD /clothing + upload + stats + favorite
+│   │   ├── chat.py              # POST /chat + history + DELETE
+│   │   ├── social.py            # Friends, posts, feed, messages, clone
+│   │   ├── trends.py            # GET /external/trends
+│   │   └── health.py            # GET /health
 │   ├── schemas/
-│   │   ├── user.py              # UserCreate, UserLogin
-│   │   ├── clothing.py          # ClothingCreate, ClothingResponse
+│   │   ├── user.py              # UserCreate, UserLogin, UserResponse
+│   │   ├── clothing.py          # ClothingCreate, ClothingResponse, ClothingUpdate
 │   │   ├── chat.py              # ChatRequest, ChatResponse
 │   │   └── social.py            # Friendship, OutfitPost, Message schemas
 │   └── services/
 │       ├── llm_service.py       # Gemini integration + session memory
-│       └── remove_bg_service.py # Background removal via remove.bg
+│       ├── remove_bg_service.py # Background removal via remove.bg
+│       ├── image_recognition.py # AI clothing attribute detection
+│       ├── weather_service.py   # OpenWeatherMap integration
+│       └── trends_service.py    # Google Trends via pytrends
 ├── uploads/                     # User uploaded images
 ├── main.py                      # FastAPI entry point
 ├── requirements.txt             # Python dependencies
