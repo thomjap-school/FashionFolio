@@ -307,6 +307,7 @@ When uploading an image, Gemini Vision automatically detects:
 
 ```
 fashionfolio/
+├── fashionfoliocursor-app/      # React Frontend
 ├── app/
 │   ├── core/
 │   │   ├── database.py          # PostgreSQL connection + session
