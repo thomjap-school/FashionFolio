@@ -307,7 +307,6 @@ When uploading an image, Gemini Vision automatically detects:
 
 ```
 fashionfolio/
-├── fashionfoliocursor-app/      # React Frontend
 ├── app/
 │   ├── core/
 │   │   ├── database.py          # PostgreSQL connection + session
@@ -338,6 +337,7 @@ fashionfolio/
 │       ├── image_recognition.py # AI clothing attribute detection
 │       ├── weather_service.py   # OpenWeatherMap integration
 │       └── trends_service.py    # Google Trends via pytrends
+├── fashionfoliocursor-app/      # React Frontend
 ├── uploads/                     # User uploaded images
 ├── main.py                      # FastAPI entry point
 ├── requirements.txt             # Python dependencies
