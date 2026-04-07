@@ -1,5 +1,6 @@
 import { ReactNode, useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
+import { logo } from "/logo/Fulllogo.png";
 
 type Props = {
   children: ReactNode;
@@ -22,7 +23,7 @@ export function Layout({ children }: Props) {
   return (
     <div className="app-root">
       <header className="app-header">
-        <div className="logo"><Image src="/logo/Fulllogo.png" alt="FashionFolio" /></div>
+        <div className="logo"><Image src={logo} alt="FashionFolio" /></div>
         <nav className="nav">
           <NavLink to="/feed">Feed</NavLink>
           <NavLink to="/wardrobe">Wardrobe</NavLink>
