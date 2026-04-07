@@ -33,6 +33,9 @@ export function Layout({ children }: Props) {
           <NavLink to="/profile">Profile</NavLink>
         </nav>
         <div className="auth-links">
+          <NavLink to="/premium" className="premium-link">
+            Premium
+          </NavLink>
           {loggedIn ? (
             <>
               <span className="status-pill">Logged</span>
@@ -42,6 +45,7 @@ export function Layout({ children }: Props) {
             </>
           ) : (
             <>
+
               <NavLink to="/login">Login</NavLink>
               <NavLink to="/register">Sign up</NavLink>
             </>

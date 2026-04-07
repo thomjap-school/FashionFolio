@@ -287,7 +287,10 @@ async def clone_outfit(
     # 3. Demander au LLM de reproduire la tenue avec la wardrobe
     import uuid
     session_id = str(uuid.uuid4())
-    message = f"Reproduis cette tenue le plus fidèlement possible avec ma garde-robe : {post.outfit_data}"
+    message = (
+        f"Reproduis cette tenue le plus fidèlement possible "
+        f"avec ma garde-robe : {post.outfit_data}"
+    )
 
     result = await generate_outfit(
         user_message=message,

@@ -1,3 +1,6 @@
+"""app/core/database.py"""
+
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 from os import getenv
