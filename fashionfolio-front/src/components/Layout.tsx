@@ -22,7 +22,7 @@ export function Layout({ children }: Props) {
   return (
     <div className="app-root">
       <header className="app-header">
-        <div className="logo">FashionFolio</div>
+        <div className="logo"><Image src="/logo/Fulllogo.png" alt="FashionFolio" /></div>
         <nav className="nav">
           <NavLink to="/feed">Feed</NavLink>
           <NavLink to="/wardrobe">Wardrobe</NavLink>
