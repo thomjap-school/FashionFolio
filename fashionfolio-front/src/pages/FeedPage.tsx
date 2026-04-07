@@ -11,6 +11,7 @@ type FeedPost = {
   created_at: string;
 };
 
+// Social feed page where users can post their outfits and see posts from friends.
 export function FeedPage() {
   const navigate = useNavigate();
   const [caption, setCaption] = useState("");

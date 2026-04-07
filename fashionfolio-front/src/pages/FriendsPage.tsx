@@ -7,6 +7,7 @@ type User = {
   email: string;
 };
 
+// Friends page where users can search for other users, see their profile info, and manage friend requests
 export function FriendsPage() {
   const [me, setMe] = useState<User | null>(null);
   const [friends, setFriends] = useState<User[]>([]);

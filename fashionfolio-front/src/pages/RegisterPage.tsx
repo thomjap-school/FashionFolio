@@ -10,6 +10,7 @@ export function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Handle form submission to register a new user account
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);

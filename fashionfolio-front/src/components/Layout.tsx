@@ -5,7 +5,7 @@ import logo from "./logo/Fulllogo.png";
 type Props = {
   children: ReactNode;
 };
-
+// Main layout component that wraps around all pages, providing a consistent header and navigation
 export function Layout({ children }: Props) {
   const navigate = useNavigate();
   const [loggedIn, setLoggedIn] = useState(false);

@@ -5,7 +5,7 @@ type Trend = {
   title?: string;
   description?: string;
 };
-
+// Explore page that fetches and displays fashion trends from the backend service
 export function ExplorePage() {
   const [trends, setTrends] = useState<Trend[]>([]);
   const [error, setError] = useState<string | null>(null);

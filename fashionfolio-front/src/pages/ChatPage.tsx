@@ -12,6 +12,7 @@ type AiChannel = {
   label: string;
 };
 
+// Chat page where users can interact with an AI stylist and also manage DMs with friends.
 type ChannelHistories = Record<string, ChatMessage[]>;
 
 export function ChatPage() {
