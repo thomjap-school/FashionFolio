@@ -41,7 +41,12 @@ GEMINI_API_KEY="your_gemini_api_key"
 GEMINI_MODEL="gemini-2.0-flash"
 REMOVE_BG_API_KEY="your_removebg_api_key"
 WEATHER_API_KEY="your_openweathermap_api_key"
+NGROK="your_ngrok_link"
 SECRET_KEY="your_jwt_secret_key"
+STRIPE_SECRET_KEY="your_stripe_secret_key"
+STRIPE_WEBHOOK_SECRET="your_stripe_webhook_secret"
+STRIPE_PRICE_MONTHLY="your_stripe_price_monthly"
+STRIPE_PRICE_YEARLY="your_stripe_price_yearly"
 ```
 
 3. Install dependencies:

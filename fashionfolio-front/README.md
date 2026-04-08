@@ -7,7 +7,7 @@ This is a Vite + React TypeScript web frontend for your existing FashionFolio ba
 From the repo root:
 
 ```bash
-cd fashionfoliocursor-app
+cd fashionfolio-front
 npm install
 npm run dev
 ```
@@ -21,6 +21,3 @@ The frontend expects a `VITE_API_URL` environment variable:
 ```bash
 VITE_API_URL=http://localhost:8000
 ```
-
-Create a `.env` file in `fashionfoliocursor-app/` with that variable (or adjust to wherever your backend is running).
-
