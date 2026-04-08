@@ -111,9 +111,9 @@ export function WardrobePage() {
         <div className="list">
           {items.map((item) => (
             <article key={item.id} className="card card-row">
-              {item.image_bg_removed_url && (
+              {item.image_url && (
                 <img
-                  src={item.image_bg_removed_url}
+                  src={item.image_url}
                   alt={item.name}
                   className="card-thumb"
                 />
