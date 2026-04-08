@@ -314,40 +314,40 @@ When uploading an image, Gemini Vision automatically detects:
 fashionfolio/
 ├── app/
 │   ├── core/
-│   │   ├── database.py          # PostgreSQL connection + session
-│   │   └── security.py          # Password hashing + JWT creation
+│   │   ├── database.py          # PostgreSQL connection + session management
+│   │   └── security.py          # Password hashing + JWT token generation
 │   ├── dependencies/
-│   │   └── auth.py              # JWT middleware (get_current_user)
+│   │   └── auth.py              # JWT middleware (current user injection)
 │   ├── models/
 │   │   ├── user.py              # Users table
-│   │   ├── clothing.py          # Clothing table
+│   │   ├── clothing.py          # Clothing table (wardrobe)
 │   │   ├── outfit.py            # Outfits table
-│   │   └── social.py            # Friendship, posts, messages tables
+│   │   └── social.py            # Tables for friendships, posts, and messages
 │   ├── routes/
-│   │   ├── auth.py              # POST /auth/register, /auth/login
-│   │   ├── users.py             # GET /users/me, /users/search
-│   │   ├── clothing.py          # CRUD /clothing + upload + stats + favorite
-│   │   ├── chat.py              # POST /chat + history + DELETE
-│   │   ├── social.py            # Friends, posts, feed, messages, clone
-│   │   ├── trends.py            # GET /external/trends
-│   │   └── health.py            # GET /health
+│   │   ├── auth.py              # Registration and login endpoints
+│   │   ├── users.py             # Profile management and user search
+│   │   ├── clothing.py          # Full clothing CRUD + upload + stats
+│   │   ├── chat.py              # AI Chat interface + history
+│   │   ├── social.py            # Friends system, feed, and messaging
+│   │   ├── trends.py            # Fetching external fashion trends
+│   │   └── health.py            # API status check
 │   ├── schemas/
-│   │   ├── user.py              # UserCreate, UserLogin, UserResponse
-│   │   ├── clothing.py          # ClothingCreate, ClothingResponse, ClothingUpdate
-│   │   ├── chat.py              # ChatRequest, ChatResponse
-│   │   └── social.py            # Friendship, OutfitPost, Message schemas
+│   │   ├── user.py              # Pydantic validation (Create, Login, Response)
+│   │   ├── clothing.py          # Clothing validation schemas
+│   │   ├── chat.py              # AI request/response validation
+│   │   └── social.py            # Social interaction validation
 │   └── services/
 │       ├── llm_service.py       # Gemini integration + session memory
-│       ├── remove_bg_service.py # Background removal via remove.bg
-│       ├── image_recognition.py # AI clothing attribute detection
-│       ├── weather_service.py   # OpenWeatherMap integration
-│       └── trends_service.py    # Google Trends via pytrends
-├── fashionfoliocursor-app/      # React Frontend
-├── uploads/                     # User uploaded images
-├── main.py                      # FastAPI entry point
-├── requirements.txt             # Python dependencies
-├── Dockerfile                   # Docker image
-├── docker-compose.yml           # API + PostgreSQL services
-├── .env                         # Environment variables (git ignored)
-└── .env.example                 # Environment variables template
+│       ├── remove_bg_service.py # Background removal via external API
+│       ├── image_recognition.py # AI attribute detection (colors, category)
+│       ├── weather_service.py   # Weather integration (OpenWeatherMap)
+│       └── trends_service.py    # Trend analysis via Pytrends
+├── fashionfolio-front/          # Frontend UI (React + TypeScript)
+├── uploads/                     # Local storage for imported images
+├── main.py                      # FastAPI application entry point
+├── requirements.txt             # Python project dependencies
+├── Dockerfile                   # Containerization configuration
+├── docker-compose.yml           # API and PostgreSQL orchestration
+├── .env                         # Environment variables (Git ignored)
+└── .env.example                 # Template for required environment variables
 ```
