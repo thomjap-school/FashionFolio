@@ -11,3 +11,6 @@ uploads/clothing/*
 uploads/posts/*
 fashionfolio-app/
 node_modules/
+dist/
+fashionfolio-front/capacitor.config.ts
+android/
