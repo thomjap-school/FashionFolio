@@ -1,8 +1,9 @@
 from fastapi import FastAPI
 from fastapi.security import HTTPBearer
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 import os
-
 
 from app.core.database import Base, engine
 import app.models.user
@@ -25,16 +26,10 @@ app = FastAPI(
     version="0.1.0",
 )
 
-# Allow browser frontend to call this API
+# Configuration CORS (tu peux garder tes liens actuels, ça ne gêne pas)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        os.getenv("EXPO_PUBLIC_API_URL"),
-        "http://localhost:8000",
-        os.getenv("NGROK"),
-    ],
+    allow_origins=["*"],  # On simplifie pour le test mobile
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -42,6 +37,7 @@ app.add_middleware(
 
 security = HTTPBearer()
 
+# Tes routes API existantes
 app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(social_router)
@@ -51,7 +47,25 @@ app.include_router(health_router)
 app.include_router(trends_router)
 app.include_router(payments.router)
 
+# --- CONFIGURATION POUR LE FRONTEND (À AJOUTER ICI) ---
+
+# On monte le dossier "static" qui contient ton build React (assets JS/CSS)
+# Assure-toi d'avoir créé le dossier "static" à la racine et d'y avoir mis le contenu de ton "dist"
+if os.path.exists("static"):
+    app.mount("/assets", StaticFiles(directory="static/assets"), name="static")
+
 
 @app.get("/")
 def root():
-    return {"message": "FashionFolio API is running 🚀"}
+    # Si le fichier index.html existe, on le sert, sinon on affiche le message de l'API
+    if os.path.exists("static/index.html"):
+        return FileResponse("static/index.html")
+    return {"message": "FashionFolio API is running 🚀 (Frontend non trouvé dans /static)"}
+
+
+# Gestion du refresh (évite les erreurs 404 quand tu navigues dans l'app React)
+@app.exception_handler(404)
+async def not_found_exception_handler(request, exc):
+    if os.path.exists("static/index.html"):
+        return FileResponse("static/index.html")
+    return {"detail": "Not Found"}
