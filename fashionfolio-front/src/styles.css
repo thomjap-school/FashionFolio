@@ -329,21 +329,93 @@ section p {
   background: rgba(148, 163, 184, 0.24);
 }
 
+/* ── Hamburger button ── */
+.hamburger {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  color: #e5e7eb;
+}
+
+.hamburger span {
+  display: block;
+  width: 24px;
+  height: 2px;
+  background: currentColor;
+  border-radius: 2px;
+  transition: transform 0.25s, opacity 0.25s;
+}
+
+.hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.hamburger.open span:nth-child(2) { opacity: 0; }
+.hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+/* ── Mobile drawer ── */
+.mobile-menu {
+  display: none;
+}
+
+.mobile-nav,
+.mobile-auth {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mobile-nav a,
+.mobile-auth a,
+.mobile-auth .link-button {
+  padding: 0.6rem 1rem;
+  border-radius: 0.75rem;
+  font-size: 1rem;
+  color: #e5e7eb;
+  transition: background 0.15s;
+}
+
+.mobile-nav a:hover,
+.mobile-auth a:hover {
+  background: rgba(148, 163, 184, 0.15);
+}
+
+.mobile-nav a.active,
+.mobile-auth a.active {
+  background: rgba(168, 85, 247, 0.2);
+  color: #d8b4fe;
+}
+
+.mobile-auth {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.2);
+}
+
 @media (max-width: 768px) {
-  .app-header {
-    flex-wrap: wrap;
-    row-gap: 0.5rem;
-  }
-
-  .nav {
-    width: 100%;
-    justify-content: center;
-    flex-wrap: wrap;
-  }
-
+  /* Cache la nav et les auth-links desktop */
+  .nav,
   .auth-links {
-    width: 100%;
-    justify-content: flex-end;
+    display: none;
+  }
+
+  /* Affiche le bouton hamburger */
+  .hamburger {
+    display: flex;
+  }
+
+  /* Affiche le drawer mobile */
+  .mobile-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 1rem 1.25rem 1.25rem;
+    background: rgba(15, 23, 42, 0.97);
+    backdrop-filter: blur(18px);
+    border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
   }
 
   .app-main {
@@ -359,4 +431,3 @@ section p {
     grid-template-columns: minmax(0, 1fr);
   }
 }
-
