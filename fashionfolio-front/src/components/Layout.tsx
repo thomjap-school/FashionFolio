@@ -39,7 +39,9 @@ export function Layout({ children }: Props) {
     <div className="app-root">
       <header className="app-header">
         <div className="logo">
-          <img src={logo} alt="FashionFolio" style={{ width: "60%", height: "auto" }} />
+          <NavLink to="/chat" onClick={closeMenu}>
+            <img src={logo} alt="FashionFolio" style={{ width: "60%", height: "auto" }} />
+          </NavLink>
         </div>
 
         {/* Desktop nav */}
