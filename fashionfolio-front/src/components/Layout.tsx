@@ -90,26 +90,26 @@ export function Layout({ children }: Props) {
       {menuOpen && (
         <div className="mobile-menu">
           <nav className="mobile-nav">
-            <NavLink to="/feed" onClick={closeMenu}>Feed</NavLink>
-            <NavLink to="/wardrobe" onClick={closeMenu}>Wardrobe</NavLink>
-            <NavLink to="/explore" onClick={closeMenu}>Explore</NavLink>
-            <NavLink to="/chat" onClick={closeMenu}>Chat</NavLink>
-            <NavLink to="/friends" onClick={closeMenu}>Friends</NavLink>
-            <NavLink to="/profile" onClick={closeMenu}>Profile</NavLink>
+            <NavLink to="/feed" onClick={closeMenu}>📱Feed</NavLink>
+            <NavLink to="/wardrobe" onClick={closeMenu}>👕Wardrobe</NavLink>
+            <NavLink to="/explore" onClick={closeMenu}>🔍Explore</NavLink>
+            <NavLink to="/chat" onClick={closeMenu}>💬Chat</NavLink>
+            <NavLink to="/friends" onClick={closeMenu}>👥Friends</NavLink>
+            <NavLink to="/profile" onClick={closeMenu}>👤Profile</NavLink>
           </nav>
           <div className="mobile-auth">
-            <NavLink to="/premium" className="premium-link" onClick={closeMenu}>Premium</NavLink>
+            <NavLink to="/premium" className="premium-link" onClick={closeMenu}>👑Premium</NavLink>
             {loggedIn ? (
               <>
-                <span className="status-pill">Logged</span>
+                <span className="status-pill">🟢Logged in</span>
                 <button className="link-button" type="button" onClick={handleLogout}>
                   Logout
                 </button>
               </>
             ) : (
               <>
-                <NavLink to="/login" onClick={closeMenu}>Login</NavLink>
-                <NavLink to="/register" onClick={closeMenu}>Sign up</NavLink>
+                <NavLink to="/login" onClick={closeMenu}>🔑Login</NavLink>
+                <NavLink to="/register" onClick={closeMenu}>➡️Sign up</NavLink>
               </>
             )}
           </div>
