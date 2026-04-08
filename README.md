@@ -289,6 +289,8 @@ When uploading an image, Gemini Vision automatically detects:
 ---
 
 ## 👑 Premium — `/payments`
+| Method | Route | Description |
+|--------|-------|-------------|
 | `POST` | `/payments/create-checkout-session` | Create checkout session |
 | `POST` | `/payments/webhook` | Config the Webhook |
 
