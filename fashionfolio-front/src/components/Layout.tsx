@@ -39,7 +39,7 @@ export function Layout({ children }: Props) {
     <div className="app-root">
       <header className="app-header">
         <div className="logo">
-          <img src={logo} alt="FashionFolio" />
+          <img src={logo} alt="FashionFolio" style={{ width: "60%", height: "auto" }} />
         </div>
 
         {/* Desktop nav */}
@@ -70,7 +70,7 @@ export function Layout({ children }: Props) {
           )}
         </div>
 
-        {/* Hamburger button — mobile only */}
+        {/* Hamburger button*/}
         <button
           className={`hamburger${menuOpen ? " open" : ""}`}
           type="button"
